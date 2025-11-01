@@ -66,7 +66,6 @@
         Final Score: <span id="final-score">0</span><br>
         <button id="restart-btn" onclick="restartGame()">Play Again! 🚀</button>
     </div>
-
     <!-- Audio elements - Add your fun files here! -->
     <audio id="bgMusic" loop>
         <source src="background-music.mp3" type="audio/mpeg"> <!-- Upbeat triplet tune? 🎶 -->
@@ -77,18 +76,15 @@
     <audio id="portalSound">
         <source src="portal-sound.mp3" type="audio/mpeg"> <!-- Magical dive! ✨ -->
     </audio>
-
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-
         // Audio hooks
         const bgMusic = document.getElementById('bgMusic');
         const flapSound = document.getElementById('flapSound');
         const portalSound = document.getElementById('portalSound');
-
         // Core tuning
         const gravity = 0.38;
         const flapStrength = -9.5;
@@ -98,7 +94,6 @@
         const waveAmplitude = 26;
         const waveFrequency = 0.015;
         const beatSpeed = 0.08;
-
         // Runtime state
         let waterHeight = canvas.height * waterHeightRatio;
         let waveOffset = 0;
@@ -109,29 +104,22 @@
         let underwaterTimer = 0;
         let graceTimer = 0;
         let animationId = null;
-
         const characters = [
             { name: 'Alayna', x: canvas.width / 4, y: canvas.height / 2 - 60, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
             { name: 'Jazmine', x: canvas.width / 2, y: canvas.height / 2 - 40, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
             { name: 'Lilah', x: (3 * canvas.width) / 4, y: canvas.height / 2 - 50, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
         ];
-
         characters[0].image.src = 'Alayna.jpg';
-        characters[1].image.src = 'Jazmine.png';
+        characters[1].image.src = 'Jazmine.jpg';  // Changed from .png to .jpg!
         characters[2].image.src = 'Lilah.jpg';
-
         const charSize = 60;
         const wingSize = 25;
-
         let flappingPressed = false;
         let flappingPressedPrev = false;
-
         const portal = { x: canvas.width + 200, y: 0, size: 120, active: false };
         let portalSpawnTimer = 0;
         const portalInterval = 180;
-
         let diveOrigins = characters.map((char) => char.y);
-
         window.addEventListener('mousedown', () => (flappingPressed = true));
         window.addEventListener('mouseup', () => (flappingPressed = false));
         window.addEventListener('touchstart', (event) => {
@@ -139,7 +127,6 @@
             flappingPressed = true;
         });
         window.addEventListener('touchend', () => (flappingPressed = false));
-
         const resumeAudio = () => {
             bgMusic.play().catch(() => {});
             window.removeEventListener('mousedown', resumeAudio);
@@ -147,7 +134,6 @@
         };
         window.addEventListener('mousedown', resumeAudio, { once: true });
         window.addEventListener('touchstart', resumeAudio, { once: true });
-
         function drawWings(x, y, flapAngle) {
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 4;
@@ -161,15 +147,12 @@
             ctx.quadraticCurveTo(x + charSize / 2 + wingSize * 1.2, y + flapAngle * 1.5, x + charSize / 2 + wingSize / 2, y + flapAngle);
             ctx.stroke();
         }
-
         function getWaterHeightAtX(x) {
             return canvas.height - waterHeight + Math.sin((x * waveFrequency + waveOffset) * 2) * waveAmplitude;
         }
-
         function drawRainbowWater() {
             beatPhase += beatSpeed;
             waveOffset += gameSpeed * 0.32 + Math.sin(beatPhase) * 0.25;
-
             const gradient = ctx.createLinearGradient(0, canvas.height - waterHeight * 1.5, 0, canvas.height);
             gradient.addColorStop(0, 'rgba(255, 0, 0, 0.82)');
             gradient.addColorStop(0.14, 'rgba(255, 140, 0, 0.8)');
@@ -178,7 +161,6 @@
             gradient.addColorStop(0.56, 'rgba(30, 144, 255, 0.8)');
             gradient.addColorStop(0.7, 'rgba(106, 90, 205, 0.82)');
             gradient.addColorStop(1, 'rgba(186, 85, 211, 0.9)');
-
             ctx.fillStyle = gradient;
             ctx.beginPath();
             ctx.moveTo(0, getWaterHeightAtX(0));
@@ -188,7 +170,6 @@
             ctx.lineTo(canvas.width, canvas.height);
             ctx.lineTo(0, canvas.height);
             ctx.fill();
-
             ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
             for (let i = 0; i < 20; i++) {
                 const wx = (i * 110 + waveOffset * 12) % canvas.width;
@@ -197,7 +178,6 @@
                 ctx.fill();
             }
         }
-
         function drawUnderwaterWorld() {
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, 'rgba(148, 0, 211, 0.65)');
@@ -210,7 +190,6 @@
             gradient.addColorStop(1, 'rgba(120, 0, 60, 0.9)');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             for (let i = 0; i < 30; i++) {
                 const bx = (i * 150 + score * 0.6) % canvas.width;
@@ -219,7 +198,6 @@
                 ctx.arc(bx, by, Math.random() * 6 + 4, 0, Math.PI * 2);
                 ctx.fill();
             }
-
             ctx.fillStyle = '#FFD700';
             for (let i = 0; i < 18; i++) {
                 ctx.beginPath();
@@ -227,7 +205,6 @@
                 ctx.fill();
             }
         }
-
         function drawPortal() {
             if (!portal.active) return;
             const glow = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
@@ -250,7 +227,6 @@
             ctx.textAlign = 'center';
             ctx.fillText('Dive!', portal.x, portal.y + 6);
         }
-
         function updatePortal() {
             portalSpawnTimer++;
             if (!portal.active && !isUnderwater && portalSpawnTimer > portalInterval) {
@@ -260,7 +236,6 @@
                 portal.active = true;
                 portalSpawnTimer = 0;
             }
-
             if (portal.active) {
                 portal.x -= gameSpeed;
                 if (portal.x + portal.size / 2 < 0) {
@@ -268,7 +243,6 @@
                 }
             }
         }
-
         function checkPortalCollision() {
             if (!portal.active) return;
             for (const char of characters) {
@@ -281,7 +255,6 @@
                 }
             }
         }
-
         function enterUnderwater() {
             isUnderwater = true;
             underwaterTimer = underwaterDuration;
@@ -291,7 +264,6 @@
             portalSound.currentTime = 0;
             portalSound.play().catch(() => {});
         }
-
         function exitUnderwater() {
             isUnderwater = false;
             graceTimer = 30;
@@ -302,7 +274,6 @@
                 }
             });
         }
-
         function updateCharacters() {
             if (isUnderwater) {
                 const progress = 1 - underwaterTimer / underwaterDuration;
@@ -317,7 +288,6 @@
                 flappingPressedPrev = flappingPressed;
                 return;
             }
-
             characters.forEach((char) => {
                 if (flappingPressed) {
                     if (!flappingPressedPrev) {
@@ -328,38 +298,30 @@
                 } else {
                     char.vy += gravity;
                 }
-
                 char.y += char.vy;
-
                 const ceiling = charSize / 2 + 20;
                 if (char.y < ceiling) {
                     char.y = ceiling;
                     if (char.vy < 0) char.vy = 0;
                 }
-
                 const airLower = canvas.height - waterHeight - charSize - 20;
                 if (char.y > airLower) {
                     char.y = airLower;
                     if (char.vy > 0) char.vy = 0;
                 }
-
                 if (graceTimer <= 0 && char.y + charSize / 2 > getWaterHeightAtX(char.x)) {
                     triggerGameOver();
                 }
             });
-
             flappingPressedPrev = flappingPressed;
         }
-
         function drawCharacters() {
             const time = Date.now() * 0.01;
             const flapBase = flappingPressed ? Math.sin(time * 16) * -14 : Math.sin(time * 8) * 8;
             const underwaterRipple = isUnderwater ? Math.sin(time * 12) * 6 : 0;
-
             characters.forEach((char, index) => {
                 const personalFlap = flapBase + underwaterRipple + Math.sin(time * 5 + index) * 3;
                 drawWings(char.x, char.y, personalFlap);
-
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(char.x, char.y, charSize / 2, 0, Math.PI * 2);
@@ -371,16 +333,16 @@
                 ctx.shadowColor = flappingPressed || isUnderwater ? '#FFD700' : '#FFF';
                 ctx.shadowBlur = 16;
                 if (char.ready && char.image.naturalWidth) {
+                    ctx.filter = 'brightness(1.1) contrast(1.2)';  // Added subtle filter to make photos look better!
                     ctx.drawImage(char.image, char.x - charSize / 2, char.y - charSize / 2, charSize, charSize);
+                    ctx.filter = 'none';  // Reset filter after drawing
                 }
                 ctx.restore();
             });
         }
-
         function drawScore() {
             document.getElementById('score').textContent = `Score: ${Math.floor(score / 60)}`;
         }
-
         function triggerGameOver() {
             if (gameOver) return;
             gameOver = true;
@@ -392,13 +354,10 @@
             document.getElementById('game-over').style.display = 'block';
             bgMusic.pause();
         }
-
         function gameLoop() {
             if (gameOver) return;
-
             score++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             if (isUnderwater) {
                 drawUnderwaterWorld();
                 underwaterTimer--;
@@ -412,7 +371,6 @@
                 skyGrad.addColorStop(1, '#E0FFFF');
                 ctx.fillStyle = skyGrad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height * 0.6);
-
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 for (let i = 0; i < 5; i++) {
                     const cx = (i * 320 + score * 0.35) % (canvas.width + 220) - 110;
@@ -423,42 +381,33 @@
                     ctx.arc(cx + 70, cy, 35, 0, Math.PI * 2);
                     ctx.fill();
                 }
-
                 drawRainbowWater();
             }
-
             updatePortal();
             drawPortal();
             checkPortalCollision();
             updateCharacters();
             drawCharacters();
             drawScore();
-
             if (graceTimer > 0) {
                 graceTimer--;
             }
-
             if (!gameOver) {
                 animationId = requestAnimationFrame(gameLoop);
             }
         }
-
         function resetCharacters() {
             characters[0].x = canvas.width / 4;
             characters[1].x = canvas.width / 2;
             characters[2].x = (3 * canvas.width) / 4;
-
             characters[0].y = canvas.height / 2 - 60;
             characters[1].y = canvas.height / 2 - 40;
             characters[2].y = canvas.height / 2 - 50;
-
             characters.forEach((char) => {
                 char.vy = 0;
             });
-
             diveOrigins = characters.map((char) => char.y);
         }
-
         function initGame() {
             resetCharacters();
             gameOver = false;
@@ -479,18 +428,15 @@
             }
             animationId = requestAnimationFrame(gameLoop);
         }
-
         function restartGame() {
             initGame();
         }
-
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             waterHeight = canvas.height * waterHeightRatio;
             resetCharacters();
         });
-
         characters.forEach((char) => {
             char.image.addEventListener('load', () => {
                 char.ready = true;
@@ -502,7 +448,6 @@
                 char.ready = true;
             }
         });
-
         initGame();
     </script>
 </body>
