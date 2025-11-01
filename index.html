@@ -290,7 +290,31 @@
                     char.vy += gravity;
                 }
                 char.y += char.vy;
-                char.y = Math.max(charSize / 2 + 20, Math.min(canvas.height - waterHeight - charSize - 20, char.y)); // Soft bounds
+
+                // Ceiling always applies
+                const ceiling = charSize / 2 + 20;
+                if (char.y < ceiling) {
+                    char.y = ceiling;
+                    if (char.vy < 0) char.vy = 0;
+                }
+
+                // Air lower bound only when not underwater (approximate to prevent dipping too low)
+                if (!isUnderwater) {
+                    const airLower = canvas.height - waterHeight - charSize - 20;
+                    if (char.y > airLower) {
+                        char.y = airLower;
+                        if (char.vy > 0) char.vy = 0;
+                    }
+                }
+
+                // Underwater floor
+                if (isUnderwater) {
+                    const underwaterFloor = canvas.height - charSize / 2 - 20;
+                    if (char.y > underwaterFloor) {
+                        char.y = underwaterFloor;
+                        if (char.vy > 0) char.vy = 0;
+                    }
+                }
 
                 // Wavy water collision (only above water)
                 if (!isUnderwater && char.y + charSize / 2 > getWaterHeightAtX(char.x)) {
@@ -342,7 +366,16 @@
             if (isUnderwater) {
                 drawUnderwaterWorld();
                 underwaterTimer--;
-                if (underwaterTimer <= 0) isUnderwater = false;
+                if (underwaterTimer <= 0) {
+                    isUnderwater = false;
+                    characters.forEach(char => {
+                        const surfaceY = getWaterHeightAtX(char.x) - charSize / 2 - 10;
+                        if (char.y > surfaceY) {
+                            char.y = surfaceY;
+                            if (char.vy > 0) char.vy = 0;
+                        }
+                    });
+                }
             } else {
                 // Sky gradient refresh
                 const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.6);
