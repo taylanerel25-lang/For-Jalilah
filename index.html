@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rainbow Flight</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#87ceeb;}
+  canvas{display:block;width:100%;height:100%;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let player = { x:100, y:200, vy:0, size:30 };
+let gravity = 0.4;
+let flying = false;
+let gameOver = false;
+
+// --- rainbow water
+function drawWater() {
+  const h = canvas.height * 0.25;
+  const gradient = ctx.createLinearGradient(0, canvas.height-h, 0, canvas.height);
+  gradient.addColorStop(0, "red");
+  gradient.addColorStop(0.17, "orange");
+  gradient.addColorStop(0.33, "yellow");
+  gradient.addColorStop(0.5, "green");
+  gradient.addColorStop(0.67, "blue");
+  gradient.addColorStop(0.83, "indigo");
+  gradient.addColorStop(1, "violet");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, canvas.height-h, canvas.width, h);
+  return canvas.height-h;
+}
+
+// --- player
+function drawPlayer() {
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y);
+  ctx.lineTo(player.x - 20, player.y + 10);
+  ctx.lineTo(player.x - 20, player.y - 10);
+  ctx.closePath();
+  ctx.fillStyle = "white";
+  ctx.fill();
+}
+
+// --- loop
+function loop() {
+  if (gameOver) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const waterTop = drawWater();
+
+  // physics
+  player.vy += gravity;
+  player.y += player.vy;
+  if (flying) player.vy -= 0.8;
+
+  // check hit water
+  if (player.y + player.size > waterTop) {
+    gameOver = true;
+    alert("You touched the rainbow water!");
+  }
+
+  drawPlayer();
+  requestAnimationFrame(loop);
+}
+
+addEventListener("mousedown", () => flying = true);
+addEventListener("mouseup", () => flying = false);
+addEventListener("touchstart", () => flying = true);
+addEventListener("touchend", () => flying = false);
+
+loop();
+</script>
+</body>
+</html>
