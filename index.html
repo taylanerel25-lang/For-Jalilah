@@ -81,14 +81,14 @@
         // Audio hooks
         const bgMusic = document.getElementById('bgMusic');
         const flapSound = document.getElementById('flapSound');
-        // Core tuning
-        const gravity = 0.38;
-        const flapStrength = -9.5;
-        const gameSpeed = 2.6;
+        // Core tuning (tweaked for jumpier Fun Run feel)
+        const gravity = 0.5; // A bit heavier for satisfying jumps
+        const jumpStrength = -12; // Bigger leap for dodging!
+        const gameSpeed = 3; // Faster scroll for racing vibe
         const waterHeightRatio = 0.25;
         const waveAmplitude = 26;
         const waveFrequency = 0.015;
-        const beatSpeed = 0.008; // Slowed to 10% of original 0.08
+        const beatSpeed = 0.008;
         // Runtime state
         let waterHeight = canvas.height * waterHeightRatio;
         let waveOffset = 0;
@@ -104,22 +104,22 @@
         characters[0].image.src = 'Alayna.jpg';
         characters[1].image.src = 'Jazmine.jpg';
         characters[2].image.src = 'Lilah.jpg';
-        const charSize = 30; // Made even smaller from 40
-        const wingSize = 12; // Adjusted proportionally from 15
-        let flappingPressed = false;
-        let flappingPressedPrev = false;
+        const charSize = 30;
+        const wingSize = 12;
+        let jumpingPressed = false;
+        let jumpingPressedPrev = false;
         let obstacles = [];
         let obstacleSpawnTimer = 0;
-        const obstacleInterval = 180;
+        const obstacleInterval = 150; // More frequent for excitement
         const obstacleWidth = 50;
         const obstacleHeight = 50;
-        window.addEventListener('mousedown', () => (flappingPressed = true));
-        window.addEventListener('mouseup', () => (flappingPressed = false));
+        window.addEventListener('mousedown', () => (jumpingPressed = true));
+        window.addEventListener('mouseup', () => (jumpingPressed = false));
         window.addEventListener('touchstart', (event) => {
             event.preventDefault();
-            flappingPressed = true;
+            jumpingPressed = true;
         });
-        window.addEventListener('touchend', () => (flappingPressed = false));
+        window.addEventListener('touchend', () => (jumpingPressed = false));
         const resumeAudio = () => {
             bgMusic.play().catch(() => {});
             window.removeEventListener('mousedown', resumeAudio);
@@ -145,7 +145,7 @@
         }
         function drawRainbowWater() {
             beatPhase += beatSpeed;
-            waveOffset += gameSpeed * 0.032 + Math.sin(beatPhase) * 0.025; // Slowed to 10% of original increments
+            waveOffset += gameSpeed * 0.032 + Math.sin(beatPhase) * 0.025;
             const gradient = ctx.createLinearGradient(0, canvas.height - waterHeight * 1.5, 0, canvas.height);
             gradient.addColorStop(0, 'rgba(255, 0, 0, 0.82)');
             gradient.addColorStop(0.14, 'rgba(255, 140, 0, 0.8)');
@@ -174,8 +174,9 @@
         function updateObstacles() {
             obstacleSpawnTimer++;
             if (obstacleSpawnTimer > obstacleInterval) {
-                const verticalRange = Math.max(canvas.height - waterHeight - 260, 120);
-                const obsY = (canvas.height - waterHeight) - obstacleHeight - Math.random() * verticalRange / 2; // Tend towards lower to "jump over"
+                const minY = 150;
+                const maxY = canvas.height - waterHeight - obstacleHeight - 50;
+                const obsY = minY + Math.random() * (maxY - minY);
                 obstacles.push({
                     x: canvas.width + obstacleWidth,
                     y: obsY,
@@ -192,7 +193,7 @@
             }
         }
         function drawObstacles() {
-            ctx.fillStyle = '#FF4500'; // Orange-red for fun obstacles
+            ctx.fillStyle = '#FF4500';
             for (const obs of obstacles) {
                 ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
             }
@@ -213,15 +214,12 @@
         }
         function updateCharacters() {
             characters.forEach((char) => {
-                if (flappingPressed) {
-                    if (!flappingPressedPrev) {
-                        flapSound.currentTime = 0;
-                        flapSound.play().catch(() => {});
-                    }
-                    char.vy = flapStrength;
-                } else {
-                    char.vy += gravity;
+                if (jumpingPressed && !jumpingPressedPrev) {
+                    flapSound.currentTime = 0;
+                    flapSound.play().catch(() => {});
+                    char.vy = jumpStrength; // Jump only on new press - Fun Run style!
                 }
+                char.vy += gravity;
                 char.y += char.vy;
                 const ceiling = charSize / 2 + 20;
                 if (char.y < ceiling) {
@@ -237,11 +235,11 @@
                     triggerGameOver();
                 }
             });
-            flappingPressedPrev = flappingPressed;
+            jumpingPressedPrev = jumpingPressed;
         }
         function drawCharacters() {
             const time = Date.now() * 0.01;
-            const flapBase = flappingPressed ? Math.sin(time * 16) * -14 : Math.sin(time * 8) * 8;
+            const flapBase = jumpingPressed ? Math.sin(time * 16) * -14 : Math.sin(time * 8) * 8;
             characters.forEach((char, index) => {
                 const personalFlap = flapBase + Math.sin(time * 5 + index) * 3;
                 drawWings(char.x, char.y, personalFlap);
@@ -253,10 +251,10 @@
                     ctx.fill();
                 }
                 ctx.clip();
-                ctx.shadowColor = flappingPressed ? '#FFD700' : '#FFF';
+                ctx.shadowColor = jumpingPressed ? '#FFD700' : '#FFF';
                 ctx.shadowBlur = 16;
                 if (char.ready && char.image.naturalWidth) {
-                    ctx.filter = 'brightness(1.1) contrast(1.2)';
+                    ctx.filter = 'brightness(1.2) contrast(1.3) saturate(1.5)'; // Amped for cartoony Fun Run pop!
                     ctx.drawImage(char.image, char.x - charSize / 2, char.y - charSize / 2, charSize, charSize);
                     ctx.filter = 'none';
                 }
@@ -325,8 +323,8 @@
             score = 0;
             obstacleSpawnTimer = 0;
             obstacles = [];
-            flappingPressed = false;
-            flappingPressedPrev = false;
+            jumpingPressed = false;
+            jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
             bgMusic.play().catch(() => {});
             drawScore();
@@ -347,9 +345,10 @@
         characters.forEach((char) => {
             char.image.addEventListener('load', () => {
                 char.ready = true;
+                console.log(`${char.name}'s image loaded successfully!`); // Added logging for debug
             });
             char.image.addEventListener('error', () => {
-                console.warn(`Check ${char.name}'s image file.`);
+                console.warn(`Error loading ${char.name}'s image - check file path!`);
             });
             if (char.image.complete && char.image.naturalWidth) {
                 char.ready = true;
