@@ -1,13 +1,3 @@
-Nice build, Tay. I can see why it “does nothing” on some devices. Four culprits:
-
-1. Crash on first tap when AudioContext isn’t created (you call `audioCtx.resume()` unguarded).
-2. `waterHeight` is a `const` set once; after resize it’s wrong → collisions freak out.
-3. Game never starts if any kid’s photo fails to load (you only init on 3 onloads).
-4. Mobile audio autoplay: music won’t start until a user gesture; you weren’t retrying play on input.
-
-I patched those + added safe fallbacks for missing images and made portal spawn respect the resized water line. Drop-in file below.
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,7 +59,7 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
     </style>
 </head>
 <body>
-    <div id="score">Score: 0</div>
+<div id="score">Score: 0</div>
     <canvas id="gameCanvas"></canvas>
     <div id="game-over">
         Oh no! Splash! 💦<br>
@@ -77,15 +67,15 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
         <button id="restart-btn" onclick="restartGame()">Play Again! 🚀</button>
     </div>
 
-    <!-- Audio elements -->
+    <!-- Audio elements - Add your fun files here! -->
     <audio id="bgMusic" loop>
-        <source src="background-music.mp3" type="audio/mpeg">
+        <source src="background-music.mp3" type="audio/mpeg"> <!-- Upbeat triplet tune? 🎶 -->
     </audio>
     <audio id="flapSound">
-        <source src="flap-sound.mp3" type="audio/mpeg">
+        <source src="flap-sound.mp3" type="audio/mpeg"> <!-- Wing flap whoosh! -->
     </audio>
     <audio id="portalSound">
-        <source src="portal-sound.mp3" type="audio/mpeg">
+        <source src="portal-sound.mp3" type="audio/mpeg"> <!-- Magical dive! ✨ -->
     </audio>
 
     <script>
@@ -94,84 +84,69 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // --- Audio setup (guarded) -------------------------------------------
+        // Audio hooks
         const bgMusic = document.getElementById('bgMusic');
         const flapSound = document.getElementById('flapSound');
         const portalSound = document.getElementById('portalSound');
 
-        let audioCtx, source, analyzer;
-        try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            source = audioCtx.createMediaElementSource(bgMusic);
-            analyzer = audioCtx.createAnalyser();
-            analyzer.fftSize = 256;
-            source.connect(analyzer);
-            analyzer.connect(audioCtx.destination);
-        } catch (e) {
-            console.log('Web Audio API not supported or blocked:', e);
-            audioCtx = null;
-            analyzer = null;
-        }
+        // Core tuning
+        const gravity = 0.38;
+        const flapStrength = -9.5;
+        const gameSpeed = 2.6;
+        const underwaterDuration = 240; // ~4 seconds
+        const waterHeightRatio = 0.25;
+        const waveAmplitude = 26;
+        const waveFrequency = 0.015;
+        const beatSpeed = 0.08;
 
-        function kickAudio() {
-            // Retry play + resume context on first input
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume().catch(()=>{});
-            }
-            bgMusic.play().catch(()=>{});
-        }
-
-        // --- Game variables ---------------------------------------------------
-        let gravity = 0.4;
-        let flapStrength = -9;
-        let gameSpeed = 2.5;
+        // Runtime state
+        let waterHeight = canvas.height * waterHeightRatio;
+        let waveOffset = 0;
+        let beatPhase = 0;
         let score = 0;
         let gameOver = false;
         let isUnderwater = false;
         let underwaterTimer = 0;
-        const underwaterDuration = 240; // ~4 sec
-        let diveSavedY = [];
-        let waveOffset = 0;
-        const waveAmplitude = 25;
-        const waveFrequency = 0.015;
-        let waterHeight = canvas.height * 0.25; // FIX: was const; now responsive
-
-        // Characters
-        function makeImg(src) {
-            const img = new Image();
-            img.crossOrigin = "anonymous"; // helps if hosted elsewhere
-            img.src = src;
-            return img;
-        }
+        let graceTimer = 0;
+        let animationId = null;
 
         const characters = [
-            { name: 'Alayna',  x: canvas.width / 4,     y: canvas.height / 2 - 50, vy: 0, image: makeImg('Alayna.jpg') },
-            { name: 'Jazmine', x: canvas.width / 2,     y: canvas.height / 2 - 30, vy: 0, image: makeImg('Jazmine.png') },
-            { name: 'Lilah',   x: 3 * canvas.width / 4, y: canvas.height / 2 - 40, vy: 0, image: makeImg('Lilah.jpg') }
+            { name: 'Alayna', x: canvas.width / 4, y: canvas.height / 2 - 60, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
+            { name: 'Jazmine', x: canvas.width / 2, y: canvas.height / 2 - 40, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
+            { name: 'Lilah', x: (3 * canvas.width) / 4, y: canvas.height / 2 - 50, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
         ];
+
+        characters[0].image.src = 'Alayna.jpg';
+        characters[1].image.src = 'Jazmine.png';
+        characters[2].image.src = 'Lilah.jpg';
 
         const charSize = 60;
         const wingSize = 25;
 
-        // Portal
-        let portal = { x: canvas.width + 200, y: 0, size: 120, active: false };
+        let flappingPressed = false;
+        let flappingPressedPrev = false;
+
+        const portal = { x: canvas.width + 200, y: 0, size: 120, active: false };
         let portalSpawnTimer = 0;
         const portalInterval = 180;
 
-        // Input
-        let flappingPressed = false;
-        let flappingPressedPrev = false;
-        window.addEventListener('mousedown', () => { flappingPressed = true; kickAudio(); });
-        window.addEventListener('mouseup',   () => { flappingPressed = false; });
-        window.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            flappingPressed = true;
-            kickAudio(); // FIX: guard + retry play on first touch
-        }, { passive: false });
-        window.addEventListener('touchend', () => { flappingPressed = false; }, { passive: false });
+        let diveOrigins = characters.map((char) => char.y);
 
-        // --- Helpers ----------------------------------------------------------
-        function isImageReady(img){ return img && img.complete && img.naturalWidth > 0; }
+        window.addEventListener('mousedown', () => (flappingPressed = true));
+        window.addEventListener('mouseup', () => (flappingPressed = false));
+        window.addEventListener('touchstart', (event) => {
+            event.preventDefault();
+            flappingPressed = true;
+        });
+        window.addEventListener('touchend', () => (flappingPressed = false));
+
+        const resumeAudio = () => {
+            bgMusic.play().catch(() => {});
+            window.removeEventListener('mousedown', resumeAudio);
+            window.removeEventListener('touchstart', resumeAudio);
+        };
+        window.addEventListener('mousedown', resumeAudio, { once: true });
+        window.addEventListener('touchstart', resumeAudio, { once: true });
 
         function drawWings(x, y, flapAngle) {
             ctx.strokeStyle = '#FFD700';
@@ -191,31 +166,20 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
             return canvas.height - waterHeight + Math.sin((x * waveFrequency + waveOffset) * 2) * waveAmplitude;
         }
 
-        function detectBeat() {
-            if (!analyzer) return 0;
-            const bufferLength = analyzer.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyzer.getByteFrequencyData(dataArray);
-            let lowEnergy = 0;
-            for (let i = 0; i < 8; i++) lowEnergy += dataArray[i];
-            return lowEnergy / 8;
-        }
-
         function drawRainbowWater() {
-            const beatEnergy = detectBeat();
-            const beatBoost = beatEnergy > 100 ? 0.2 + (beatEnergy - 100) / 100 * 0.3 : 0.1;
-            waveOffset += gameSpeed * 0.3 + beatBoost;
+            beatPhase += beatSpeed;
+            waveOffset += gameSpeed * 0.32 + Math.sin(beatPhase) * 0.25;
 
             const gradient = ctx.createLinearGradient(0, canvas.height - waterHeight * 1.5, 0, canvas.height);
-            gradient.addColorStop(0, 'rgba(255, 0, 0, 0.8)');
-            gradient.addColorStop(0.14, 'rgba(255, 165, 0, 0.8)');
-            gradient.addColorStop(0.28, 'rgba(255, 255, 0, 0.8)');
-            gradient.addColorStop(0.42, 'rgba(0, 255, 0, 0.8)');
-            gradient.addColorStop(0.56, 'rgba(0, 100, 255, 0.8)');
-            gradient.addColorStop(0.7, 'rgba(75, 0, 130, 0.8)');
-            gradient.addColorStop(1, 'rgba(148, 0, 211, 0.9)');
-            ctx.fillStyle = gradient;
+            gradient.addColorStop(0, 'rgba(255, 0, 0, 0.82)');
+            gradient.addColorStop(0.14, 'rgba(255, 140, 0, 0.8)');
+            gradient.addColorStop(0.28, 'rgba(255, 215, 0, 0.82)');
+            gradient.addColorStop(0.42, 'rgba(0, 200, 0, 0.78)');
+            gradient.addColorStop(0.56, 'rgba(30, 144, 255, 0.8)');
+            gradient.addColorStop(0.7, 'rgba(106, 90, 205, 0.82)');
+            gradient.addColorStop(1, 'rgba(186, 85, 211, 0.9)');
 
+            ctx.fillStyle = gradient;
             ctx.beginPath();
             ctx.moveTo(0, getWaterHeightAtX(0));
             for (let x = 0; x <= canvas.width; x += 5) {
@@ -225,44 +189,41 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
             ctx.lineTo(0, canvas.height);
             ctx.fill();
 
-            // Sparkles
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
             for (let i = 0; i < 20; i++) {
-                const wx = (i * 100 + waveOffset * 10) % canvas.width;
+                const wx = (i * 110 + waveOffset * 12) % canvas.width;
                 ctx.beginPath();
-                ctx.arc(wx, getWaterHeightAtX(wx) - 10, 3 + beatBoost * 10, 0, Math.PI * 2);
+                ctx.arc(wx, getWaterHeightAtX(wx) - 12, 3.2, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
         function drawUnderwaterWorld() {
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, 'rgba(148, 0, 211, 0.6)');
-            gradient.addColorStop(0.14, 'rgba(75, 0, 130, 0.6)');
-            gradient.addColorStop(0.28, 'rgba(0, 100, 255, 0.7)');
-            gradient.addColorStop(0.42, 'rgba(0, 255, 0, 0.7)');
-            gradient.addColorStop(0.56, 'rgba(255, 255, 0, 0.8)');
-            gradient.addColorStop(0.7, 'rgba(255, 165, 0, 0.8)');
-            gradient.addColorStop(0.84, 'rgba(255, 0, 0, 0.9)');
-            gradient.addColorStop(1, 'rgba(100, 0, 50, 0.9)');
+            gradient.addColorStop(0, 'rgba(148, 0, 211, 0.65)');
+            gradient.addColorStop(0.15, 'rgba(75, 0, 130, 0.65)');
+            gradient.addColorStop(0.3, 'rgba(0, 120, 255, 0.7)');
+            gradient.addColorStop(0.45, 'rgba(0, 255, 180, 0.75)');
+            gradient.addColorStop(0.6, 'rgba(255, 255, 0, 0.8)');
+            gradient.addColorStop(0.75, 'rgba(255, 165, 0, 0.82)');
+            gradient.addColorStop(0.9, 'rgba(255, 69, 0, 0.85)');
+            gradient.addColorStop(1, 'rgba(120, 0, 60, 0.9)');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Bubbles
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             for (let i = 0; i < 30; i++) {
-                const bx = (i * 150 + score * 0.5) % canvas.width;
-                const by = canvas.height - (i * 50 + underwaterTimer * 2) % canvas.height;
+                const bx = (i * 150 + score * 0.6) % canvas.width;
+                const by = canvas.height - ((i * 60 + underwaterTimer * 3) % canvas.height);
                 ctx.beginPath();
-                ctx.arc(bx, by, Math.random() * 8 + 4, 0, Math.PI * 2);
+                ctx.arc(bx, by, Math.random() * 6 + 4, 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            // Coral sparkles
             ctx.fillStyle = '#FFD700';
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 18; i++) {
                 ctx.beginPath();
-                ctx.arc(Math.random() * canvas.width, canvas.height * 0.8 + Math.random() * 100, 2, 0, Math.PI * 2);
+                ctx.arc(Math.random() * canvas.width, canvas.height * 0.8 + Math.random() * 120, 2, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -276,8 +237,8 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
             ctx.arc(portal.x, portal.y, portal.size / 2, 0, Math.PI * 2);
             const portalGrad = ctx.createRadialGradient(portal.x, portal.y, 0, portal.x, portal.y, portal.size / 2);
             portalGrad.addColorStop(0, `rgba(255, 255, 200, ${0.9 * glow})`);
-            portalGrad.addColorStop(0.7, `rgba(255, 215, 0, ${0.4 * glow})`);
-            portalGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            portalGrad.addColorStop(0.65, `rgba(255, 215, 0, ${0.45 * glow})`);
+            portalGrad.addColorStop(1, 'rgba(255, 120, 0, 0)');
             ctx.fillStyle = portalGrad;
             ctx.fill();
             ctx.shadowBlur = 0;
@@ -287,103 +248,130 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
             ctx.font = 'bold 16px Arial';
             ctx.fillStyle = '#333';
             ctx.textAlign = 'center';
-            ctx.fillText('Dive!', portal.x, portal.y + 5);
+            ctx.fillText('Dive!', portal.x, portal.y + 6);
         }
 
         function updatePortal() {
             portalSpawnTimer++;
-            if (!portal.active && portalSpawnTimer > portalInterval) {
-                portal.x = canvas.width + 150;
-                const maxY = Math.max(150, canvas.height - waterHeight - 250);
-                portal.y = 150 + Math.random() * Math.max(10, maxY - 150); // FIX: respect water after resize
+            if (!portal.active && !isUnderwater && portalSpawnTimer > portalInterval) {
+                portal.x = canvas.width + 160;
+                const verticalRange = Math.max(canvas.height - waterHeight - 260, 120);
+                portal.y = 150 + Math.random() * verticalRange;
                 portal.active = true;
                 portalSpawnTimer = 0;
             }
+
             if (portal.active) {
                 portal.x -= gameSpeed;
-                if (portal.x + portal.size / 2 < 0) portal.active = false;
+                if (portal.x + portal.size / 2 < 0) {
+                    portal.active = false;
+                }
             }
         }
 
         function checkPortalCollision() {
-            if (!portal.active) return false;
-            for (let char of characters) {
+            if (!portal.active) return;
+            for (const char of characters) {
                 const dx = char.x - portal.x;
                 const dy = char.y - portal.y;
-                if (Math.hypot(dx, dy) < (charSize / 2 + portal.size / 2) * 0.9) {
-                    isUnderwater = true;
-                    underwaterTimer = underwaterDuration;
-                    portal.active = false;
-                    try { portalSound.currentTime = 0; portalSound.play(); } catch {}
-                    diveSavedY = characters.map(c => c.y);
-                    return true;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < (charSize / 2 + portal.size / 2) * 0.9) {
+                    enterUnderwater();
+                    break;
                 }
             }
-            return false;
+        }
+
+        function enterUnderwater() {
+            isUnderwater = true;
+            underwaterTimer = underwaterDuration;
+            graceTimer = 0;
+            diveOrigins = characters.map((char) => char.y);
+            portal.active = false;
+            portalSound.currentTime = 0;
+            portalSound.play().catch(() => {});
+        }
+
+        function exitUnderwater() {
+            isUnderwater = false;
+            graceTimer = 30;
+            characters.forEach((char) => {
+                const safeY = getWaterHeightAtX(char.x) - charSize / 2 - 12;
+                if (char.y > safeY) {
+                    char.y = safeY;
+                }
+            });
         }
 
         function updateCharacters() {
             if (isUnderwater) {
-                const progress = 1 - (underwaterTimer / underwaterDuration);
-                const diveOffset = Math.sin(Math.PI * progress) * 200;
-                characters.forEach((char, i) => {
+                const progress = 1 - underwaterTimer / underwaterDuration;
+                const diveDepth = canvas.height - waterHeight - charSize - 30;
+                characters.forEach((char, index) => {
+                    const startY = diveOrigins[index] ?? char.y;
+                    const maxOffset = Math.min(diveDepth - startY, canvas.height * 0.4);
+                    const wave = Math.sin(progress * Math.PI);
+                    char.y = startY + wave * maxOffset;
                     char.vy = 0;
-                    char.y = diveSavedY[i] + diveOffset;
                 });
-            } else {
-                for (let char of characters) {
-                    if (flappingPressed) {
-                        char.vy = flapStrength;
-                        if (!flappingPressedPrev) {
-                            try { flapSound.currentTime = 0; flapSound.play(); } catch {}
-                        }
-                    } else {
-                        char.vy += gravity;
-                    }
-                    char.y += char.vy;
-
-                    // Bounds (above water)
-                    const ceiling = charSize / 2 + 20;
-                    if (char.y < ceiling) { char.y = ceiling; if (char.vy < 0) char.vy = 0; }
-
-                    const airLower = canvas.height - waterHeight - charSize - 20;
-                    if (char.y > airLower) { char.y = airLower; if (char.vy > 0) char.vy = 0; }
-
-                    // Collision with dynamic water
-                    if (char.y + charSize / 2 > getWaterHeightAtX(char.x)) gameOver = true;
-                }
+                flappingPressedPrev = flappingPressed;
+                return;
             }
+
+            characters.forEach((char) => {
+                if (flappingPressed) {
+                    if (!flappingPressedPrev) {
+                        flapSound.currentTime = 0;
+                        flapSound.play().catch(() => {});
+                    }
+                    char.vy = flapStrength;
+                } else {
+                    char.vy += gravity;
+                }
+
+                char.y += char.vy;
+
+                const ceiling = charSize / 2 + 20;
+                if (char.y < ceiling) {
+                    char.y = ceiling;
+                    if (char.vy < 0) char.vy = 0;
+                }
+
+                const airLower = canvas.height - waterHeight - charSize - 20;
+                if (char.y > airLower) {
+                    char.y = airLower;
+                    if (char.vy > 0) char.vy = 0;
+                }
+
+                if (graceTimer <= 0 && char.y + charSize / 2 > getWaterHeightAtX(char.x)) {
+                    triggerGameOver();
+                }
+            });
+
             flappingPressedPrev = flappingPressed;
         }
 
         function drawCharacters() {
             const time = Date.now() * 0.01;
-            let flapAngle = flappingPressed ? Math.sin(time * 15) * -12 : Math.sin(time * 8) * 8;
-            if (isUnderwater) flapAngle = Math.sin(time * 10) * 10;
+            const flapBase = flappingPressed ? Math.sin(time * 16) * -14 : Math.sin(time * 8) * 8;
+            const underwaterRipple = isUnderwater ? Math.sin(time * 12) * 6 : 0;
 
-            characters.forEach((char, i) => {
-                const personalFlap = flapAngle + Math.sin(time * 5 + i) * 3;
+            characters.forEach((char, index) => {
+                const personalFlap = flapBase + underwaterRipple + Math.sin(time * 5 + index) * 3;
                 drawWings(char.x, char.y, personalFlap);
+
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(char.x, char.y, charSize / 2, 0, Math.PI * 2);
+                if (!char.ready) {
+                    ctx.fillStyle = char.placeholder;
+                    ctx.fill();
+                }
                 ctx.clip();
-                ctx.shadowColor = (flappingPressed || isUnderwater) ? '#FFD700' : '#FFF';
-                ctx.shadowBlur = 15;
-
-                if (isImageReady(char.image)) {
+                ctx.shadowColor = flappingPressed || isUnderwater ? '#FFD700' : '#FFF';
+                ctx.shadowBlur = 16;
+                if (char.ready && char.image.naturalWidth) {
                     ctx.drawImage(char.image, char.x - charSize / 2, char.y - charSize / 2, charSize, charSize);
-                } else {
-                    // FIX: placeholder if image missing
-                    const grad = ctx.createLinearGradient(char.x - 30, char.y - 30, char.x + 30, char.y + 30);
-                    grad.addColorStop(0, '#ffe08a'); grad.addColorStop(1, '#ffd14a');
-                    ctx.fillStyle = grad;
-                    ctx.fillRect(char.x - charSize / 2, char.y - charSize / 2, charSize, charSize);
-                    ctx.fillStyle = '#333';
-                    ctx.font = 'bold 18px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(char.name[0] || '?', char.x, char.y);
                 }
                 ctx.restore();
             });
@@ -393,13 +381,20 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
             document.getElementById('score').textContent = `Score: ${Math.floor(score / 60)}`;
         }
 
-        function gameLoop() {
-            if (gameOver) {
-                document.getElementById('final-score').textContent = Math.floor(score / 60);
-                document.getElementById('game-over').style.display = 'block';
-                try { bgMusic.pause(); } catch {}
-                return;
+        function triggerGameOver() {
+            if (gameOver) return;
+            gameOver = true;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
             }
+            document.getElementById('final-score').textContent = Math.floor(score / 60);
+            document.getElementById('game-over').style.display = 'block';
+            bgMusic.pause();
+        }
+
+        function gameLoop() {
+            if (gameOver) return;
 
             score++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -407,7 +402,9 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
             if (isUnderwater) {
                 drawUnderwaterWorld();
                 underwaterTimer--;
-                if (underwaterTimer <= 0) isUnderwater = false;
+                if (underwaterTimer <= 0) {
+                    exitUnderwater();
+                }
             } else {
                 const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.6);
                 skyGrad.addColorStop(0, '#87CEEB');
@@ -416,14 +413,14 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
                 ctx.fillStyle = skyGrad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height * 0.6);
 
-                // Clouds
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 for (let i = 0; i < 5; i++) {
-                    const cx = (i * 300 + score * 0.3) % (canvas.width + 200) - 100;
+                    const cx = (i * 320 + score * 0.35) % (canvas.width + 220) - 110;
+                    const cy = 90 + i * 80;
                     ctx.beginPath();
-                    ctx.arc(cx, 100 + i * 80, 40, 0, Math.PI * 2);
-                    ctx.arc(cx + 30, 100 + i * 80, 50, 0, Math.PI * 2);
-                    ctx.arc(cx + 60, 100 + i * 80, 35, 0, Math.PI * 2);
+                    ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+                    ctx.arc(cx + 35, cy, 50, 0, Math.PI * 2);
+                    ctx.arc(cx + 70, cy, 35, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
@@ -437,47 +434,76 @@ I patched those + added safe fallbacks for missing images and made portal spawn 
             drawCharacters();
             drawScore();
 
-            requestAnimationFrame(gameLoop);
+            if (graceTimer > 0) {
+                graceTimer--;
+            }
+
+            if (!gameOver) {
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function resetCharacters() {
+            characters[0].x = canvas.width / 4;
+            characters[1].x = canvas.width / 2;
+            characters[2].x = (3 * canvas.width) / 4;
+
+            characters[0].y = canvas.height / 2 - 60;
+            characters[1].y = canvas.height / 2 - 40;
+            characters[2].y = canvas.height / 2 - 50;
+
+            characters.forEach((char) => {
+                char.vy = 0;
+            });
+
+            diveOrigins = characters.map((char) => char.y);
         }
 
         function initGame() {
+            resetCharacters();
             gameOver = false;
             isUnderwater = false;
+            underwaterTimer = 0;
+            graceTimer = 0;
             score = 0;
             portalSpawnTimer = 0;
-            waterHeight = canvas.height * 0.25; // FIX: recompute on init
+            portal.active = false;
+            portal.x = canvas.width + 200;
+            flappingPressed = false;
+            flappingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
-            kickAudio();
-            gameLoop();
+            bgMusic.play().catch(() => {});
+            drawScore();
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            animationId = requestAnimationFrame(gameLoop);
         }
 
         function restartGame() {
-            characters[0].y = canvas.height / 2 - 50;
-            characters[1].y = canvas.height / 2 - 30;
-            characters[2].y = canvas.height / 2 - 40;
-            characters.forEach(c => c.vy = 0);
             initGame();
         }
 
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            characters[0].x = canvas.width / 4;
-            characters[1].x = canvas.width / 2;
-            characters[2].x = 3 * canvas.width / 4;
-            waterHeight = canvas.height * 0.25; // FIX: responsive water
+            waterHeight = canvas.height * waterHeightRatio;
+            resetCharacters();
         });
 
-        // --- Asset gating: start even if images fail --------------------------
-        let readyCount = 0;
-        function markReady(){ if (++readyCount === 3) initGame(); }
-        characters.forEach(char => {
-            char.image.onload = markReady;
-            char.image.onerror = () => { console.warn(`Image missing for ${char.name}. Using placeholder.`); markReady(); };
+        characters.forEach((char) => {
+            char.image.addEventListener('load', () => {
+                char.ready = true;
+            });
+            char.image.addEventListener('error', () => {
+                console.warn(`Check ${char.name}'s image file.`);
+            });
+            if (char.image.complete && char.image.naturalWidth) {
+                char.ready = true;
+            }
         });
+
+        initGame();
     </script>
 </body>
 </html>
-```
-
-If it still misbehaves, send me your console error (and where the images live). But with these fixes, it should run, not crash on tap, and not hang waiting on photos.
