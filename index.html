@@ -21,19 +21,70 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        #game-over {
+        #game-over, #char-select {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 48px;
-            color: red;
-            display: none;
             text-align: center;
-            background: rgba(255,255,255,0.9);
-            padding: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none;
+        }
+        #char-select {
+            display: flex !important;
+            flex-direction: column;
+            gap: 25px;
+            max-width: 300px;
+            background: linear-gradient(135deg, #FFD700, #FF69B4, #87CEFA);
+            border: 4px solid #FFD700;
+        }
+        #char-select h2 {
+            margin: 0 0 20px 0;
+            font-size: 28px;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+        }
+        .char-btn {
+            background: rgba(255,255,255,0.9);
+            border: 3px solid #FFD700;
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .char-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(255,215,0,0.6);
+            background: rgba(255,255,255,1);
+        }
+        .char-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #FFD700;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .char-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #FFD700;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        #game-over {
+            font-size: 48px;
+            color: red;
         }
         #restart-btn {
             font-size: 24px;
@@ -61,6 +112,24 @@
 <body>
 <div id="score">Score: 0</div>
     <canvas id="gameCanvas"></canvas>
+    <div id="char-select">
+        <h2>🌈 Choose Your Superstar! ✨</h2>
+        <button class="char-btn" onclick="selectCharacter(0)">
+            <img class="char-preview" src="Alayna.jpg" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <div class="char-placeholder" style="background-color: #ffc0cb; display: none;"></div>
+            <span>🚀 Alayna! 💕</span>
+        </button>
+        <button class="char-btn" onclick="selectCharacter(1)">
+            <img class="char-preview" src="Jazmine.jpg" alt="Jazmine" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
+            <span>🌟 Jazmine! 💜</span>
+        </button>
+        <button class="char-btn" onclick="selectCharacter(2)">
+            <img class="char-preview" src="Lilah.jpg" alt="Lilah" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <div class="char-placeholder" style="background-color: #87cefa; display: none;"></div>
+            <span>⭐ Lilah! 💙</span>
+        </button>
+    </div>
     <div id="game-over">
         Oh no! Splash! 💦<br>
         Final Score: <span id="final-score">0</span><br>
@@ -95,17 +164,18 @@
         let beatPhase = 0;
         let score = 0;
         let gameOver = false;
+        let selectedIndex = -1;
         let animationId = null;
         const characters = [
-            { name: 'Alayna', x: canvas.width / 4, y: canvas.height / 2 - 60, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
-            { name: 'Jazmine', x: canvas.width / 2, y: canvas.height / 2 - 40, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
-            { name: 'Lilah', x: (3 * canvas.width) / 4, y: canvas.height / 2 - 50, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
+            { name: 'Alayna', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
+            { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
+            { name: 'Lilah', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
         ];
         characters[0].image.src = 'Alayna.jpg';
         characters[1].image.src = 'Jazmine.jpg';
         characters[2].image.src = 'Lilah.jpg';
-        const charSize = 30;
-        const wingSize = 12;
+        const charSize = 60; // Back to original for single char focus
+        const wingSize = 25;
         let jumpingPressed = false;
         let jumpingPressedPrev = false;
         let obstacles = [];
@@ -113,6 +183,19 @@
         const obstacleInterval = 150; // More frequent for excitement
         const obstacleWidth = 50;
         const obstacleHeight = 50;
+        function selectCharacter(index) {
+            selectedIndex = index;
+            document.getElementById('char-select').style.display = 'none';
+            initGame();
+        }
+        function showCharSelect() {
+            document.getElementById('char-select').style.display = 'flex';
+            document.getElementById('game-over').style.display = 'none';
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
         window.addEventListener('mousedown', () => (jumpingPressed = true));
         window.addEventListener('mouseup', () => (jumpingPressed = false));
         window.addEventListener('touchstart', (event) => {
@@ -200,66 +283,63 @@
         }
         function checkObstacleCollision() {
             for (const obs of obstacles) {
-                for (const char of characters) {
-                    if (
-                        char.x + charSize / 2 > obs.x &&
-                        char.x - charSize / 2 < obs.x + obs.width &&
-                        char.y + charSize / 2 > obs.y &&
-                        char.y - charSize / 2 < obs.y + obs.height
-                    ) {
-                        triggerGameOver();
-                    }
+                const char = characters[selectedIndex];
+                if (
+                    char.x + charSize / 2 > obs.x &&
+                    char.x - charSize / 2 < obs.x + obs.width &&
+                    char.y + charSize / 2 > obs.y &&
+                    char.y - charSize / 2 < obs.y + obs.height
+                ) {
+                    triggerGameOver();
                 }
             }
         }
         function updateCharacters() {
-            characters.forEach((char) => {
-                if (jumpingPressed && !jumpingPressedPrev) {
-                    flapSound.currentTime = 0;
-                    flapSound.play().catch(() => {});
-                    char.vy = jumpStrength; // Jump only on new press - Fun Run style!
-                }
-                char.vy += gravity;
-                char.y += char.vy;
-                const ceiling = charSize / 2 + 20;
-                if (char.y < ceiling) {
-                    char.y = ceiling;
-                    if (char.vy < 0) char.vy = 0;
-                }
-                const airLower = canvas.height - waterHeight - charSize - 20;
-                if (char.y > airLower) {
-                    char.y = airLower;
-                    if (char.vy > 0) char.vy = 0;
-                }
-                if (char.y + charSize / 2 > getWaterHeightAtX(char.x)) {
-                    triggerGameOver();
-                }
-            });
+            const char = characters[selectedIndex];
+            if (jumpingPressed && !jumpingPressedPrev) {
+                flapSound.currentTime = 0;
+                flapSound.play().catch(() => {});
+                char.vy = jumpStrength;
+            }
+            char.vy += gravity;
+            char.y += char.vy;
+            const ceiling = charSize / 2 + 20;
+            if (char.y < ceiling) {
+                char.y = ceiling;
+                if (char.vy < 0) char.vy = 0;
+            }
+            const airLower = canvas.height - waterHeight - charSize - 20;
+            if (char.y > airLower) {
+                char.y = airLower;
+                if (char.vy > 0) char.vy = 0;
+            }
+            if (char.y + charSize / 2 > getWaterHeightAtX(char.x)) {
+                triggerGameOver();
+            }
             jumpingPressedPrev = jumpingPressed;
         }
         function drawCharacters() {
             const time = Date.now() * 0.01;
             const flapBase = jumpingPressed ? Math.sin(time * 16) * -14 : Math.sin(time * 8) * 8;
-            characters.forEach((char, index) => {
-                const personalFlap = flapBase + Math.sin(time * 5 + index) * 3;
-                drawWings(char.x, char.y, personalFlap);
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(char.x, char.y, charSize / 2, 0, Math.PI * 2);
-                if (!char.ready) {
-                    ctx.fillStyle = char.placeholder;
-                    ctx.fill();
-                }
-                ctx.clip();
-                ctx.shadowColor = jumpingPressed ? '#FFD700' : '#FFF';
-                ctx.shadowBlur = 16;
-                if (char.ready && char.image.naturalWidth) {
-                    ctx.filter = 'brightness(1.2) contrast(1.3) saturate(1.5)'; // Amped for cartoony Fun Run pop!
-                    ctx.drawImage(char.image, char.x - charSize / 2, char.y - charSize / 2, charSize, charSize);
-                    ctx.filter = 'none';
-                }
-                ctx.restore();
-            });
+            const char = characters[selectedIndex];
+            const personalFlap = flapBase + Math.sin(time * 5 + selectedIndex) * 3;
+            drawWings(char.x, char.y, personalFlap);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(char.x, char.y, charSize / 2, 0, Math.PI * 2);
+            if (!char.ready) {
+                ctx.fillStyle = char.placeholder;
+                ctx.fill();
+            }
+            ctx.clip();
+            ctx.shadowColor = jumpingPressed ? '#FFD700' : '#FFF';
+            ctx.shadowBlur = 16;
+            if (char.ready && char.image.naturalWidth) {
+                ctx.filter = 'brightness(1.2) contrast(1.3) saturate(1.5)';
+                ctx.drawImage(char.image, char.x - charSize / 2, char.y - charSize / 2, charSize, charSize);
+                ctx.filter = 'none';
+            }
+            ctx.restore();
         }
         function drawScore() {
             document.getElementById('score').textContent = `Score: ${Math.floor(score / 60)}`;
@@ -276,7 +356,7 @@
             bgMusic.pause();
         }
         function gameLoop() {
-            if (gameOver) return;
+            if (gameOver || selectedIndex === -1) return;
             score++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.6);
@@ -307,15 +387,10 @@
             }
         }
         function resetCharacters() {
-            characters[0].x = canvas.width / 4;
-            characters[1].x = canvas.width / 2;
-            characters[2].x = (3 * canvas.width) / 4;
-            characters[0].y = canvas.height / 2 - 60;
-            characters[1].y = canvas.height / 2 - 40;
-            characters[2].y = canvas.height / 2 - 50;
-            characters.forEach((char) => {
-                char.vy = 0;
-            });
+            const char = characters[selectedIndex];
+            char.x = canvas.width / 2;
+            char.y = canvas.height / 2 - 50;
+            char.vy = 0;
         }
         function initGame() {
             resetCharacters();
@@ -334,18 +409,18 @@
             animationId = requestAnimationFrame(gameLoop);
         }
         function restartGame() {
-            initGame();
+            showCharSelect();
         }
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             waterHeight = canvas.height * waterHeightRatio;
-            resetCharacters();
+            if (selectedIndex !== -1) resetCharacters();
         });
-        characters.forEach((char) => {
+        characters.forEach((char, index) => {
             char.image.addEventListener('load', () => {
                 char.ready = true;
-                console.log(`${char.name}'s image loaded successfully!`); // Added logging for debug
+                console.log(`${char.name}'s image loaded successfully!`);
             });
             char.image.addEventListener('error', () => {
                 console.warn(`Error loading ${char.name}'s image - check file path!`);
@@ -354,7 +429,7 @@
                 char.ready = true;
             }
         });
-        initGame();
+        showCharSelect();
     </script>
 </body>
 </html>
