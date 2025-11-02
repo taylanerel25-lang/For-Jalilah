@@ -225,6 +225,9 @@
         let jewelryImage = new Image();
         jewelryImage.src = 'ChatGPT Image Nov 2, 2025, 01_11_08 PM.png';
         let jewelryReady = false;
+        let coinImage = new Image();
+        coinImage.src = 'ChatGPT Image Nov 2, 2025, 01_25_25 PM.png';
+        let coinReady = false;
         function processImage(img, index, callback, autoRemoveBg = false) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -421,18 +424,16 @@
             ctx.fill();
             ctx.restore();
         }
-        function drawCoin(x, y, size) {
-            ctx.save();
-            ctx.shadowColor = '#FFD700';
-            ctx.shadowBlur = 10;
-            ctx.beginPath();
-            ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFD700';
-            ctx.fill();
-            ctx.strokeStyle = '#DAA520';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.restore();
+        function drawCoinItem(x, y, size) {
+            if (coinReady) {
+                ctx.drawImage(coinImage, x, y, size, size);
+            } else {
+                // Fallback placeholder
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         function drawJewelry(x, y, size) {
             if (jewelryReady) {
@@ -515,7 +516,7 @@
         }
         function drawCoins() {
             for (const coin of coinsList) {
-                drawCoin(coin.x + coin.width / 2, coin.y + coin.height / 2, coin.width);
+                drawCoinItem(coin.x, coin.y, coin.width);
             }
         }
         function drawJewelryItems() {
@@ -736,6 +737,19 @@
         });
         if (jewelryImage.complete && jewelryImage.naturalWidth) {
             jewelryImage.dispatchEvent(new Event('load'));
+        }
+        // Process the coin image with auto background removal
+        coinImage.addEventListener('load', () => {
+            processImage(coinImage, -1, (processedImg) => {
+                coinImage = processedImg;
+                coinReady = true;
+            }, true);
+        });
+        coinImage.addEventListener('error', () => {
+            console.warn('Error loading coin image - check file path!');
+        });
+        if (coinImage.complete && coinImage.naturalWidth) {
+            coinImage.dispatchEvent(new Event('load'));
         }
         showCharSelect();
     </script>
