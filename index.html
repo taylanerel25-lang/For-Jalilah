@@ -116,28 +116,39 @@
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
             user-select: none;
         }
+        #jewelry {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            font-size: 28px;
+            color: #333;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+            user-select: none;
+        }
     </style>
 </head>
 <body>
 <div id="score">Score: 0</div>
 <div id="coins">Coins: 0</div>
+<div id="jewelry">Jewelry: 0</div>
     <canvas id="gameCanvas"></canvas>
     <div id="char-select">
         <h2>🌈 Choose Your Superstar! ✨</h2>
         <button class="char-btn" onclick="selectCharacter(0)">
             <img class="char-preview" src="Alayna.png" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
-            <span>🚀 Alayna 💜</span>
+            <span>🚀 Alayna! 💜</span>
         </button>
         <button class="char-btn" onclick="selectCharacter(1)">
             <img class="char-preview" src="Jazmine.png" alt="Jazmine" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #ffc0cb; display: none;"></div>
-            <span>🌟 Jazmine 💕</span>
+            <span>🌟 Jazmine! 💕</span>
         </button>
         <button class="char-btn" onclick="selectCharacter(2)">
             <img class="char-preview" src="Lilah.png" alt="Lilah" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #87cefa; display: none;"></div>
-            <span>⭐ Lilah 💙</span>
+            <span>⭐ Lilah! 💙</span>
         </button>
     </div>
     <div id="game-over">
@@ -181,6 +192,7 @@
         let beatPhase = 0;
         let score = 0;
         let coins = 0;
+        let jewelry = 0;
         let gameOver = false;
         let selectedIndex = -1;
         let animationId = null;
@@ -200,16 +212,19 @@
         let jumpingPressedPrev = false;
         let obstacles = [];
         let coinsList = [];
+        let jewelryList = [];
         let obstacleSpawnTimer = 0;
         let coinSpawnTimer = 0;
+        let jewelrySpawnTimer = 0;
         const obstacleInterval = 150; // More frequent for excitement
         const coinInterval = 200; // Coins a bit less frequent
+        const jewelryInterval = coinInterval * 5; // Rare: ~1 every 5 coins
         const obstacleSize = 75; // Big hearts!
         const coinSize = 40; // Golden coins
-        let necklaceImage = new Image();
-        necklaceImage.src = 'ChatGPT Image Nov 2, 2025, 01_11_08 PM.png';
-        let necklaceReady = false;
-        const necklaceSize = 30; // Size for the necklace overlay
+        const jewelrySize = 40; // Jewelry size
+        let jewelryImage = new Image();
+        jewelryImage.src = 'ChatGPT Image Nov 2, 2025, 01_11_08 PM.png';
+        let jewelryReady = false;
         function processImage(img, index, callback, autoRemoveBg = false) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -419,6 +434,17 @@
             ctx.stroke();
             ctx.restore();
         }
+        function drawJewelry(x, y, size) {
+            if (jewelryReady) {
+                ctx.drawImage(jewelryImage, x, y, size, size);
+            } else {
+                // Fallback placeholder
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
         function updateObstacles() {
             obstacleSpawnTimer++;
             if (obstacleSpawnTimer > obstacleInterval) {
@@ -461,6 +487,27 @@
                 }
             }
         }
+        function updateJewelry() {
+            jewelrySpawnTimer++;
+            if (jewelrySpawnTimer > jewelryInterval) {
+                const minY = 150;
+                const maxY = canvas.height - waterHeight - jewelrySize - 50;
+                const jewelryY = minY + Math.random() * (maxY - minY);
+                jewelryList.push({
+                    x: canvas.width + jewelrySize,
+                    y: jewelryY,
+                    width: jewelrySize,
+                    height: jewelrySize
+                });
+                jewelrySpawnTimer = 0;
+            }
+            for (let i = jewelryList.length - 1; i >= 0; i--) {
+                jewelryList[i].x -= gameSpeed;
+                if (jewelryList[i].x + jewelryList[i].width < 0) {
+                    jewelryList.splice(i, 1);
+                }
+            }
+        }
         function drawObstacles() {
             for (const obs of obstacles) {
                 drawHeart(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width, obstacleColor);
@@ -469,6 +516,11 @@
         function drawCoins() {
             for (const coin of coinsList) {
                 drawCoin(coin.x + coin.width / 2, coin.y + coin.height / 2, coin.width);
+            }
+        }
+        function drawJewelryItems() {
+            for (const jewel of jewelryList) {
+                drawJewelry(jewel.x, jewel.y, jewel.width);
             }
         }
         function checkObstacleCollision() {
@@ -502,6 +554,26 @@
                         navigator.vibrate(200);
                     }
                     coinsList.splice(i, 1);
+                }
+            }
+        }
+        function checkJewelryCollection() {
+            for (let i = jewelryList.length - 1; i >= 0; i--) {
+                const jewel = jewelryList[i];
+                const char = characters[selectedIndex];
+                if (
+                    char.x + charSize / 2 > jewel.x &&
+                    char.x - charSize / 2 < jewel.x + jewel.width &&
+                    char.y + charSize / 2 > jewel.y &&
+                    char.y - charSize / 2 < jewel.y + jewel.height
+                ) {
+                    jewelry++;
+                    document.getElementById('jewelry').textContent = `Jewelry: ${jewelry}`;
+                    coinSound.play().catch(() => {}); // Reuse coin sound for jewelry
+                    if (navigator.vibrate) {
+                        navigator.vibrate(200);
+                    }
+                    jewelryList.splice(i, 1);
                 }
             }
         }
@@ -553,10 +625,6 @@
                 ctx.filter = 'none';
             }
             ctx.restore();
-            // Draw necklace overlay if ready
-            if (necklaceReady) {
-                ctx.drawImage(necklaceImage, char.x - necklaceSize / 2, char.y + 20, necklaceSize, necklaceSize);
-            }
         }
         function drawScore() {
             document.getElementById('score').textContent = `Score: ${Math.floor(score / 60)}`;
@@ -587,10 +655,13 @@
             drawRainbowWater();
             updateObstacles();
             updateCoins();
+            updateJewelry();
             drawObstacles();
             drawCoins();
+            drawJewelryItems();
             checkObstacleCollision();
             checkCoinCollection();
+            checkJewelryCollection();
             updateCharacters();
             drawCharacters();
             drawScore();
@@ -610,11 +681,15 @@
             gameOver = false;
             score = 0;
             coins = 0;
+            jewelry = 0;
             document.getElementById('coins').textContent = `Coins: ${coins}`;
+            document.getElementById('jewelry').textContent = `Jewelry: ${jewelry}`;
             obstacleSpawnTimer = 0;
             coinSpawnTimer = 0;
+            jewelrySpawnTimer = 0;
             obstacles = [];
             coinsList = [];
+            jewelryList = [];
             jumpingPressed = false;
             jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
@@ -649,18 +724,18 @@
                 char.image.dispatchEvent(new Event('load'));
             }
         });
-        // Process the necklace image with auto background removal
-        necklaceImage.addEventListener('load', () => {
-            processImage(necklaceImage, -1, (processedImg) => {
-                necklaceImage = processedImg;
-                necklaceReady = true;
+        // Process the jewelry image with auto background removal
+        jewelryImage.addEventListener('load', () => {
+            processImage(jewelryImage, -1, (processedImg) => {
+                jewelryImage = processedImg;
+                jewelryReady = true;
             }, true);
         });
-        necklaceImage.addEventListener('error', () => {
-            console.warn('Error loading necklace image - check file path!');
+        jewelryImage.addEventListener('error', () => {
+            console.warn('Error loading jewelry image - check file path!');
         });
-        if (necklaceImage.complete && necklaceImage.naturalWidth) {
-            necklaceImage.dispatchEvent(new Event('load'));
+        if (jewelryImage.complete && jewelryImage.naturalWidth) {
+            jewelryImage.dispatchEvent(new Event('load'));
         }
         showCharSelect();
     </script>
