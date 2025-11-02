@@ -148,9 +148,9 @@
         const bgMusic = document.getElementById('bgMusic');
         const flapSound = document.getElementById('flapSound');
         const characterMusic = [
-            'Alayna and Lilah.mp3',
-            'Jazmine.mp3',
-            'Alayna and Lilah.mp3'
+            'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
+            'html  headtitle410 Gonetitlehead  body  centerh1410 Goneh1center  hrcenternginx1.24.0 (Ubuntu)center  body  html.mp3',
+            'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3'
         ];
         // Core tuning (tweaked for jumpier Fun Run feel)
         const gravity = 0.5; // A bit heavier for satisfying jumps
@@ -186,7 +186,6 @@
         const obstacleInterval = 150; // More frequent for excitement
         const obstacleWidth = 50;
         const obstacleHeight = 50;
-
         function processImage(img, index, callback) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -241,7 +240,6 @@
                 }
             };
         }
-
         function detachMusicUnlock() {
             if (!musicUnlockHandler) return;
             window.removeEventListener('pointerdown', musicUnlockHandler);
