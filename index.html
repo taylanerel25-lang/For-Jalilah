@@ -21,7 +21,7 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        #game-over, #char-select {
+        #game-over, #char-select, #shop, #my-stuff {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -126,6 +126,35 @@
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
             user-select: none;
         }
+        #shop, #my-stuff {
+            flex-direction: column;
+            gap: 15px;
+            max-width: 300px;
+            background: linear-gradient(135deg, #FF69B4, #87CEFA, #FFD700);
+            border: 4px solid #FF69B4;
+        }
+        #shop h2, #my-stuff h2 {
+            font-size: 32px;
+            color: #FF1493;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+        }
+        #shop h3, #my-stuff h3 {
+            font-size: 28px;
+            margin: 5px 0;
+            color: #4B0082;
+        }
+        #shop button, #my-stuff button {
+            background: #FFD700;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #shop button:hover, #my-stuff button:hover {
+            background: #FFA500;
+        }
     </style>
 </head>
 <body>
@@ -153,6 +182,25 @@
         <button class="char-btn" onclick="openShop()">
             <span>Shop 🛍️</span>
         </button>
+        <button class="char-btn" onclick="openMyStuff()">
+            <span>My Stuff 🎒</span>
+        </button>
+    </div>
+    <div id="shop">
+        <h2>Kid-Friendly Shop! 🛍️</h2>
+        <p>Your Coins: <span id="shop-coins">0</span> 💰</p>
+        <div>
+            <h3>Fluffy Kitten</h3>
+            <img id="kitten-preview" src="ChatGPT Image Nov 2, 2025, 01_40_49 PM.png" alt="Fluffy Kitten" style="width: 100px; height: 100px; border-radius: 10px;">
+            <p>Cost: 50 coins</p>
+            <button onclick="buyKitten()">Buy! 😻</button>
+        </div>
+        <button onclick="closeShop()">Close</button>
+    </div>
+    <div id="my-stuff">
+        <h2>My Stuff! 🎒</h2>
+        <div id="inventory-list"></div>
+        <button onclick="closeMyStuff()">Close</button>
     </div>
     <div id="game-over">
         Oh no! Splash! 💦<br>
@@ -194,8 +242,9 @@
         let waveOffset = 0;
         let beatPhase = 0;
         let score = 0;
-        let coins = 0;
-        let jewelry = 0;
+        let coins = localStorage.getItem('coins') ? parseInt(localStorage.getItem('coins')) : 0;
+        let jewelry = localStorage.getItem('jewelry') ? parseInt(localStorage.getItem('jewelry')) : 0;
+        let inventory = localStorage.getItem('inventory') ? JSON.parse(localStorage.getItem('inventory')) : [];
         let gameOver = false;
         let selectedIndex = -1;
         let animationId = null;
@@ -231,6 +280,10 @@
         let coinImage = new Image();
         coinImage.src = 'ChatGPT Image Nov 2, 2025, 01_25_25 PM.png';
         let coinReady = false;
+        let kittenImage = new Image();
+        kittenImage.src = 'ChatGPT Image Nov 2, 2025, 01_40_49 PM.png';
+        let kittenReady = false;
+        let kittenSrc = '';
         function processImage(img, index, callback, autoRemoveBg = false) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -245,10 +298,10 @@
                 bgG = data[1];
                 bgB = data[2];
             }
-            // Remove background with adjusted threshold
+            // Remove background
             for (let i = 0; i < data.length; i += 4) {
                 if (autoRemoveBg) {
-                    if (Math.abs(data[i] - bgR) < 40 && Math.abs(data[i + 1] - bgG) < 40 && Math.abs(data[i + 2] - bgB) < 40) {
+                    if (Math.abs(data[i] - bgR) < 30 && Math.abs(data[i + 1] - bgG) < 30 && Math.abs(data[i + 2] - bgB) < 30) {
                         data[i + 3] = 0; // Make transparent
                     }
                 } else {
@@ -552,6 +605,7 @@
                     char.y - charSize / 2 < coin.y + coin.height
                 ) {
                     coins++;
+                    localStorage.setItem('coins', coins);
                     document.getElementById('coins').textContent = `Coins: ${coins}`;
                     coinSound.play().catch(() => {});
                     if (navigator.vibrate) {
@@ -572,6 +626,7 @@
                     char.y - charSize / 2 < jewel.y + jewel.height
                 ) {
                     jewelry++;
+                    localStorage.setItem('jewelry', jewelry);
                     document.getElementById('jewelry').textContent = `Jewelry: ${jewelry}`;
                     coinSound.play().catch(() => {}); // Reuse coin sound for jewelry
                     if (navigator.vibrate) {
@@ -684,8 +739,7 @@
             resetCharacters();
             gameOver = false;
             score = 0;
-            coins = 0;
-            jewelry = 0;
+            // Don't reset coins and jewelry, as they are persistent
             document.getElementById('coins').textContent = `Coins: ${coins}`;
             document.getElementById('jewelry').textContent = `Jewelry: ${jewelry}`;
             obstacleSpawnTimer = 0;
@@ -709,7 +763,45 @@
             showCharSelect();
         }
         function openShop() {
-            alert("Shop coming soon! 🛍️✨");
+            document.getElementById('char-select').style.display = 'none';
+            document.getElementById('shop').style.display = 'flex';
+            document.getElementById('shop-coins').textContent = coins;
+            if (kittenReady) {
+                document.getElementById('kitten-preview').src = kittenSrc;
+            }
+        }
+        function closeShop() {
+            document.getElementById('shop').style.display = 'none';
+            document.getElementById('char-select').style.display = 'flex';
+        }
+        function buyKitten() {
+            if (coins >= 50 && !inventory.includes('kitten')) {
+                coins -= 50;
+                inventory.push('kitten');
+                localStorage.setItem('coins', coins);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                document.getElementById('shop-coins').textContent = coins;
+                alert("Yay! You got the Fluffy Kitten! 😻");
+            } else if (inventory.includes('kitten')) {
+                alert("You already have the Fluffy Kitten! 🐱");
+            } else {
+                alert("Oops, you need 50 coins! Keep collecting! 💰");
+            }
+        }
+        function openMyStuff() {
+            document.getElementById('char-select').style.display = 'none';
+            document.getElementById('my-stuff').style.display = 'flex';
+            const list = document.getElementById('inventory-list');
+            list.innerHTML = '';
+            if (inventory.includes('kitten')) {
+                list.innerHTML += '<div><h3>Fluffy Kitten</h3><img src="' + kittenSrc + '" alt="Fluffy Kitten" style="width: 100px; height: 100px; border-radius: 10px;"></div>';
+            } else {
+                list.innerHTML += '<p>You don\'t have any stuff yet! Go shopping! 🛍️</p>';
+            }
+        }
+        function closeMyStuff() {
+            document.getElementById('my-stuff').style.display = 'none';
+            document.getElementById('char-select').style.display = 'flex';
         }
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
@@ -756,6 +848,22 @@
         });
         if (coinImage.complete && coinImage.naturalWidth) {
             coinImage.dispatchEvent(new Event('load'));
+        }
+        // Process the kitten image with auto background removal
+        kittenImage.addEventListener('load', () => {
+            processImage(kittenImage, -1, (processedImg) => {
+                kittenSrc = processedImg.src;
+                kittenReady = true;
+                if (document.getElementById('kitten-preview')) {
+                    document.getElementById('kitten-preview').src = kittenSrc;
+                }
+            }, true);
+        });
+        kittenImage.addEventListener('error', () => {
+            console.warn('Error loading kitten image - check file path!');
+        });
+        if (kittenImage.complete && kittenImage.naturalWidth) {
+            kittenImage.dispatchEvent(new Event('load'));
         }
         showCharSelect();
     </script>
