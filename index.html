@@ -268,6 +268,7 @@
         let coins = localStorage.getItem('coins') ? parseInt(localStorage.getItem('coins')) : 0;
         let jewelry = localStorage.getItem('jewelry') ? parseInt(localStorage.getItem('jewelry')) : 0;
         let inventory = localStorage.getItem('inventory') ? JSON.parse(localStorage.getItem('inventory')) : [];
+        let equippedPet = localStorage.getItem('equippedPet') || null;
         let gameOver = false;
         let selectedIndex = -1;
         let animationId = null;
@@ -297,6 +298,7 @@
         const obstacleSize = 75; // Big hearts!
         const coinSize = 40; // Golden coins
         const jewelrySize = 40; // Jewelry size
+        const petSize = 50; // Size for equipped pet
         let jewelryImage = new Image();
         jewelryImage.src = 'ChatGPT Image Nov 2, 2025, 01_11_08 PM.png';
         let jewelryReady = false;
@@ -710,6 +712,10 @@
                 ctx.filter = 'none';
             }
             ctx.restore();
+            // Draw equipped pet if any
+            if (equippedPet === 'kitten' && kittenReady) {
+                ctx.drawImage(kittenImage, char.x + charSize / 2 + 10, char.y - petSize / 2, petSize, petSize);
+            }
         }
         function drawScore() {
             document.getElementById('score').textContent = `Score: ${Math.floor(score / 60)}`;
@@ -823,10 +829,15 @@
             const list = document.getElementById('inventory-list');
             list.innerHTML = '';
             if (inventory.includes('kitten')) {
-                list.innerHTML += '<div><h3>Fluffy Kitten</h3><img src="' + kittenSrc + '" alt="Fluffy Kitten" style="width: 100px; height: 100px; border-radius: 10px;"></div>';
+                list.innerHTML += '<div><h3>Fluffy Kitten</h3><img src="' + kittenSrc + '" alt="Fluffy Kitten" style="width: 100px; height: 100px; border-radius: 10px;"><button onclick="useKitten()">Use this item</button></div>';
             } else {
                 list.innerHTML += '<p>You don\'t have any stuff yet! Go shopping! 🛍️</p>';
             }
+        }
+        function useKitten() {
+            equippedPet = 'kitten';
+            localStorage.setItem('equippedPet', equippedPet);
+            alert("Fluffy Kitten is now with you! 😻");
         }
         function closeMyStuff() {
             document.getElementById('my-stuff').style.display = 'none';
@@ -886,6 +897,7 @@
         kittenImage.addEventListener('load', () => {
             processImage(kittenImage, -1, (processedImg) => {
                 kittenSrc = processedImg.src;
+                kittenImage = processedImg;
                 kittenReady = true;
                 if (document.getElementById('kitten-preview')) {
                     document.getElementById('kitten-preview').src = kittenSrc;
