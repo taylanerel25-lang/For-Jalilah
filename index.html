@@ -106,10 +106,21 @@
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
             user-select: none;
         }
+        #coins {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 28px;
+            color: #333;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+            user-select: none;
+        }
     </style>
 </head>
 <body>
 <div id="score">Score: 0</div>
+<div id="coins">Coins: 0</div>
     <canvas id="gameCanvas"></canvas>
     <div id="char-select">
         <h2>🌈 Choose Your Superstar! ✨</h2>
@@ -152,10 +163,10 @@
             'html  headtitle410 Gonetitlehead  body  centerh1410 Goneh1center  hrcenternginx1.24.0 (Ubuntu)center  body  html.mp3',
             'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3'
         ];
-        // Core tuning (tweaked for jumpier Fun Run feel)
+        // Core tuning (tweaked for easier play)
         const gravity = 0.5; // A bit heavier for satisfying jumps
-        const jumpStrength = -12; // Bigger leap for dodging!
-        const gameSpeed = 3; // Faster scroll for racing vibe
+        const jumpStrength = -15; // Even bigger leap for easier dodging!
+        const gameSpeed = 2; // Slower scroll for chill racing vibe
         const waterHeightRatio = 0.25;
         const waveAmplitude = 26;
         const waveFrequency = 0.015;
@@ -165,6 +176,7 @@
         let waveOffset = 0;
         let beatPhase = 0;
         let score = 0;
+        let coins = 0;
         let gameOver = false;
         let selectedIndex = -1;
         let animationId = null;
@@ -183,9 +195,13 @@
         let jumpingPressed = false;
         let jumpingPressedPrev = false;
         let obstacles = [];
+        let coinsList = [];
         let obstacleSpawnTimer = 0;
+        let coinSpawnTimer = 0;
         const obstacleInterval = 150; // More frequent for excitement
+        const coinInterval = 200; // Coins a bit less frequent
         const obstacleSize = 75; // Big hearts!
+        const coinSize = 40; // Golden coins
         function processImage(img, index, callback) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -368,6 +384,19 @@
             ctx.fill();
             ctx.restore();
         }
+        function drawCoin(x, y, size) {
+            ctx.save();
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFD700';
+            ctx.fill();
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
         function updateObstacles() {
             obstacleSpawnTimer++;
             if (obstacleSpawnTimer > obstacleInterval) {
@@ -389,12 +418,39 @@
                 }
             }
         }
+        function updateCoins() {
+            coinSpawnTimer++;
+            if (coinSpawnTimer > coinInterval) {
+                const minY = 150;
+                const maxY = canvas.height - waterHeight - coinSize - 50;
+                const coinY = minY + Math.random() * (maxY - minY);
+                coinsList.push({
+                    x: canvas.width + coinSize,
+                    y: coinY,
+                    width: coinSize,
+                    height: coinSize
+                });
+                coinSpawnTimer = 0;
+            }
+            for (let i = coinsList.length - 1; i >= 0; i--) {
+                coinsList[i].x -= gameSpeed;
+                if (coinsList[i].x + coinsList[i].width < 0) {
+                    coinsList.splice(i, 1);
+                }
+            }
+        }
         function drawObstacles() {
             for (const obs of obstacles) {
                 drawHeart(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width, obstacleColor);
             }
         }
+        function drawCoins() {
+            for (const coin of coinsList) {
+                drawCoin(coin.x + coin.width / 2, coin.y + coin.height / 2, coin.width);
+            }
+        }
         function checkObstacleCollision() {
+            // Removed game over trigger; now immortal!
             for (const obs of obstacles) {
                 const char = characters[selectedIndex];
                 if (
@@ -403,7 +459,23 @@
                     char.y + charSize / 2 > obs.y &&
                     char.y - charSize / 2 < obs.y + obs.height
                 ) {
-                    triggerGameOver();
+                    // Optional: Could add a bounce or effect here, but keeping it simple
+                }
+            }
+        }
+        function checkCoinCollection() {
+            for (let i = coinsList.length - 1; i >= 0; i--) {
+                const coin = coinsList[i];
+                const char = characters[selectedIndex];
+                if (
+                    char.x + charSize / 2 > coin.x &&
+                    char.x - charSize / 2 < coin.x + coin.width &&
+                    char.y + charSize / 2 > coin.y &&
+                    char.y - charSize / 2 < coin.y + coin.height
+                ) {
+                    coins++;
+                    document.getElementById('coins').textContent = `Coins: ${coins}`;
+                    coinsList.splice(i, 1);
                 }
             }
         }
@@ -426,8 +498,10 @@
                 char.y = airLower;
                 if (char.vy > 0) char.vy = 0;
             }
+            // Removed water collision game over; now bounces off
             if (char.y + charSize / 2 > getWaterHeightAtX(char.x)) {
-                triggerGameOver();
+                char.y = getWaterHeightAtX(char.x) - charSize / 2;
+                char.vy = 0;
             }
             jumpingPressedPrev = jumpingPressed;
         }
@@ -458,16 +532,7 @@
             document.getElementById('score').textContent = `Score: ${Math.floor(score / 60)}`;
         }
         function triggerGameOver() {
-            if (gameOver) return;
-            gameOver = true;
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
-            document.getElementById('final-score').textContent = Math.floor(score / 60);
-            document.getElementById('game-over').style.display = 'block';
-            bgMusic.pause();
-            detachMusicUnlock();
+            // Disabled entirely for immortality mode
         }
         function gameLoop() {
             if (gameOver || selectedIndex === -1) return;
@@ -491,8 +556,11 @@
             }
             drawRainbowWater();
             updateObstacles();
+            updateCoins();
             drawObstacles();
+            drawCoins();
             checkObstacleCollision();
+            checkCoinCollection();
             updateCharacters();
             drawCharacters();
             drawScore();
@@ -511,8 +579,12 @@
             resetCharacters();
             gameOver = false;
             score = 0;
+            coins = 0;
+            document.getElementById('coins').textContent = `Coins: ${coins}`;
             obstacleSpawnTimer = 0;
+            coinSpawnTimer = 0;
             obstacles = [];
+            coinsList = [];
             jumpingPressed = false;
             jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
