@@ -32,6 +32,8 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: none;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         #char-select {
             flex-direction: column;
@@ -105,6 +107,39 @@
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
             user-select: none;
+        }
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            #char-select, #game-over {
+                top: 60%;
+                padding: 20px;
+            }
+            #char-select h2 {
+                font-size: 24px;
+            }
+            .char-btn {
+                font-size: 18px;
+                padding: 10px;
+                gap: 10px;
+            }
+            .char-preview, .char-placeholder {
+                width: 60px;
+                height: 60px;
+            }
+            #game-over {
+                font-size: 36px;
+            }
+            #restart-btn {
+                font-size: 20px;
+                padding: 8px 16px;
+            }
+            #score {
+                font-size: 24px;
+                top: 10px;
+            }
+            canvas {
+                height: calc(100vh - 60px); /* Nudge down for phone notches */
+            }
         }
     </style>
 </head>
