@@ -135,9 +135,7 @@
         <button id="restart-btn" onclick="restartGame()">Play Again! 🚀</button>
     </div>
     <!-- Audio elements - Add your fun files here! -->
-    <audio id="bgMusic" loop>
-        <source src="background-music.mp3" type="audio/mpeg"> <!-- Upbeat triplet tune? 🎶 -->
-    </audio>
+    <audio id="bgMusic" loop></audio>
     <audio id="flapSound">
         <source src="flap-sound.mp3" type="audio/mpeg"> <!-- Wing flap whoosh! -->
     </audio>
@@ -149,6 +147,11 @@
         // Audio hooks
         const bgMusic = document.getElementById('bgMusic');
         const flapSound = document.getElementById('flapSound');
+        const characterMusic = [
+            'Alayna and Lilah.mp3',
+            'Jazmine.mp3',
+            'Alayna and Lilah.mp3'
+        ];
         // Core tuning (tweaked for jumpier Fun Run feel)
         const gravity = 0.5; // A bit heavier for satisfying jumps
         const jumpStrength = -12; // Bigger leap for dodging!
@@ -238,14 +241,28 @@
             };
         }
 
+        function setCharacterMusic(index) {
+            const musicSrc = characterMusic[index];
+            if (!musicSrc) return;
+            if (bgMusic.getAttribute('data-current-src') !== musicSrc) {
+                bgMusic.pause();
+                bgMusic.src = musicSrc;
+                bgMusic.load();
+                bgMusic.setAttribute('data-current-src', musicSrc);
+            }
+            bgMusic.currentTime = 0;
+        }
         function selectCharacter(index) {
             selectedIndex = index;
+            setCharacterMusic(index);
             document.getElementById('char-select').style.display = 'none';
             initGame();
         }
         function showCharSelect() {
             document.getElementById('char-select').style.display = 'flex';
             document.getElementById('game-over').style.display = 'none';
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
             if (animationId) {
                 cancelAnimationFrame(animationId);
                 animationId = null;
@@ -259,7 +276,9 @@
         });
         window.addEventListener('touchend', () => (jumpingPressed = false));
         const resumeAudio = () => {
-            bgMusic.play().catch(() => {});
+            if (bgMusic.src) {
+                bgMusic.play().catch(() => {});
+            }
             window.removeEventListener('mousedown', resumeAudio);
             window.removeEventListener('touchstart', resumeAudio);
         };
@@ -456,6 +475,7 @@
             jumpingPressed = false;
             jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
+            bgMusic.currentTime = 0;
             bgMusic.play().catch(() => {});
             drawScore();
             if (animationId) {
