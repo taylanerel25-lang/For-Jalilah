@@ -155,6 +155,25 @@
         #shop button:hover, #my-stuff button:hover {
             background: #FFA500;
         }
+        #back-home {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #FF69B4, #FFD700);
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            color: #333;
+            font-weight: bold;
+            display: none;
+        }
+        #back-home:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -207,6 +226,7 @@
         Final Score: <span id="final-score">0</span><br>
         <button id="restart-btn" onclick="restartGame()">Play Again! 🚀</button>
     </div>
+    <button id="back-home" onclick="restartGame()">Back Home 🏠</button>
     <!-- Audio elements - Add your fun files here! -->
     <audio id="bgMusic" loop preload="auto"></audio>
     <audio id="flapSound">
@@ -398,11 +418,13 @@
             setCharacterMusic(index);
             tryStartMusic();
             document.getElementById('char-select').style.display = 'none';
+            document.getElementById('back-home').style.display = 'block';
             initGame();
         }
         function showCharSelect() {
             document.getElementById('char-select').style.display = 'flex';
             document.getElementById('game-over').style.display = 'none';
+            document.getElementById('back-home').style.display = 'none';
             bgMusic.pause();
             bgMusic.currentTime = 0;
             detachMusicUnlock();
