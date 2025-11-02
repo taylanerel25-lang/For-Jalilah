@@ -217,6 +217,12 @@
             <p id="kitten-cost"><img id="coin-icon" src="" style="width: 20px; height: 20px;"> 50</p>
             <button onclick="buyKitten()">Buy! 😻</button>
         </div>
+        <div>
+            <h3>Cute Puppy</h3>
+            <img id="puppy-preview" src="ChatGPT Image Nov 2, 2025, 02_17_17 PM.png" alt="Cute Puppy" style="width: 100px; height: 100px; border-radius: 10px;">
+            <p id="puppy-cost"><img id="coin-icon2" src="" style="width: 20px; height: 20px;"> 50</p>
+            <button onclick="buyPuppy()">Buy! 🐶</button>
+        </div>
         <button class="close-btn" onclick="closeShop()">Close</button>
     </div>
     <div id="my-stuff">
@@ -310,6 +316,10 @@
         kittenImage.src = 'ChatGPT Image Nov 2, 2025, 01_40_49 PM.png';
         let kittenReady = false;
         let kittenSrc = '';
+        let puppyImage = new Image();
+        puppyImage.src = 'ChatGPT Image Nov 2, 2025, 02_17_17 PM.png';
+        let puppyReady = false;
+        let puppySrc = '';
         function processImage(img, index, callback, autoRemoveBg = false) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -715,6 +725,8 @@
             // Draw equipped pet if any
             if (equippedPet === 'kitten' && kittenReady) {
                 ctx.drawImage(kittenImage, char.x + charSize / 2 + 10, char.y - petSize / 2, petSize, petSize);
+            } else if (equippedPet === 'puppy' && puppyReady) {
+                ctx.drawImage(puppyImage, char.x + charSize / 2 + 10, char.y - petSize / 2, petSize, petSize);
             }
         }
         function drawScore() {
@@ -804,6 +816,12 @@
             if (coinReady) {
                 document.getElementById('coin-icon').src = coinSrc;
             }
+            if (puppyReady) {
+                document.getElementById('puppy-preview').src = puppySrc;
+            }
+            if (coinReady) {
+                document.getElementById('coin-icon2').src = coinSrc;
+            }
         }
         function closeShop() {
             document.getElementById('shop').style.display = 'none';
@@ -823,6 +841,20 @@
                 alert("Oops, you need 50 coins! Keep collecting! 💰");
             }
         }
+        function buyPuppy() {
+            if (coins >= 50 && !inventory.includes('puppy')) {
+                coins -= 50;
+                inventory.push('puppy');
+                localStorage.setItem('coins', coins);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                document.getElementById('shop-coins').textContent = coins;
+                alert("Yay! You got the Cute Puppy! 🐶");
+            } else if (inventory.includes('puppy')) {
+                alert("You already have the Cute Puppy! 🐕");
+            } else {
+                alert("Oops, you need 50 coins! Keep collecting! 💰");
+            }
+        }
         function openMyStuff() {
             document.getElementById('char-select').style.display = 'none';
             document.getElementById('my-stuff').style.display = 'flex';
@@ -830,7 +862,11 @@
             list.innerHTML = '';
             if (inventory.includes('kitten')) {
                 list.innerHTML += '<div><h3>Fluffy Kitten</h3><img src="' + kittenSrc + '" alt="Fluffy Kitten" style="width: 100px; height: 100px; border-radius: 10px;"><button onclick="useKitten()">Use this item</button></div>';
-            } else {
+            }
+            if (inventory.includes('puppy')) {
+                list.innerHTML += '<div><h3>Cute Puppy</h3><img src="' + puppySrc + '" alt="Cute Puppy" style="width: 100px; height: 100px; border-radius: 10px;"><button onclick="usePuppy()">Use this item</button></div>';
+            }
+            if (inventory.length === 0) {
                 list.innerHTML += '<p>You don\'t have any stuff yet! Go shopping! 🛍️</p>';
             }
         }
@@ -838,6 +874,11 @@
             equippedPet = 'kitten';
             localStorage.setItem('equippedPet', equippedPet);
             alert("Fluffy Kitten is now with you! 😻");
+        }
+        function usePuppy() {
+            equippedPet = 'puppy';
+            localStorage.setItem('equippedPet', equippedPet);
+            alert("Cute Puppy is now with you! 🐶");
         }
         function closeMyStuff() {
             document.getElementById('my-stuff').style.display = 'none';
@@ -885,6 +926,9 @@
                 if (document.getElementById('coin-icon')) {
                     document.getElementById('coin-icon').src = coinSrc;
                 }
+                if (document.getElementById('coin-icon2')) {
+                    document.getElementById('coin-icon2').src = coinSrc;
+                }
             }, true);
         });
         coinImage.addEventListener('error', () => {
@@ -909,6 +953,23 @@
         });
         if (kittenImage.complete && kittenImage.naturalWidth) {
             kittenImage.dispatchEvent(new Event('load'));
+        }
+        // Process the puppy image with auto background removal
+        puppyImage.addEventListener('load', () => {
+            processImage(puppyImage, -1, (processedImg) => {
+                puppySrc = processedImg.src;
+                puppyImage = processedImg;
+                puppyReady = true;
+                if (document.getElementById('puppy-preview')) {
+                    document.getElementById('puppy-preview').src = puppySrc;
+                }
+            }, true);
+        });
+        puppyImage.addEventListener('error', () => {
+            console.warn('Error loading puppy image - check file path!');
+        });
+        if (puppyImage.complete && puppyImage.naturalWidth) {
+            puppyImage.dispatchEvent(new Event('load'));
         }
         showCharSelect();
     </script>
