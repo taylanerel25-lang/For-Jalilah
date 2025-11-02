@@ -209,7 +209,7 @@
         <button class="char-btn" onclick="selectCharacter(4)">
             <img class="char-preview" src="Julia.png" alt="Julie" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
-            <span>🌟 Julia! 💜</span>
+            <span>🌟 Julie! 💜</span>
         </button>
         <button class="char-btn" onclick="openShop()">
             <span>Shop 🛍️</span>
@@ -265,10 +265,10 @@
         const coinSound = document.getElementById('coinSound');
         const characterMusic = [
             'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
-            'html  headtitle410 Gonetitlehead  body  centerh1410 Goneh1center  hrcenternginx1.24.0 (Ubuntu)center  body  html.mp3',
+            'html headtitle410 Gonetitlehead body centerh1410 Goneh1center hrcenternginx1.24.0 (Ubuntu)center body html.mp3',
             'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
             'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
-            'html  headtitle410 Gonetitlehead  body  centerh1410 Goneh1center  hrcenternginx1.24.0 (Ubuntu)center  body  html.mp3'
+            'html headtitle410 Gonetitlehead body centerh1410 Goneh1center hrcenternginx1.24.0 (Ubuntu)center body html.mp3'
         ];
         // Core tuning (tweaked for easier play)
         const gravity = 0.5; // A bit heavier for satisfying jumps
@@ -877,10 +877,22 @@
             const list = document.getElementById('inventory-list');
             list.innerHTML = '';
             if (inventory.includes('kitten')) {
-                list.innerHTML += '<div><h3>Fluffy Kitten</h3><img src="' + kittenSrc + '" alt="Fluffy Kitten" style="width: 100px; height: 100px; border-radius: 10px;"><button onclick="useKitten()">Use this item</button></div>';
+                let buttonHtml = '';
+                if (equippedPet === 'kitten') {
+                    buttonHtml = '<button onclick="removeKitten()">Remove</button>';
+                } else {
+                    buttonHtml = '<button onclick="useKitten()">Use this item</button>';
+                }
+                list.innerHTML += '<div><h3>Fluffy Kitten</h3><img src="' + kittenSrc + '" alt="Fluffy Kitten" style="width: 100px; height: 100px; border-radius: 10px;">' + buttonHtml + '</div>';
             }
             if (inventory.includes('puppy')) {
-                list.innerHTML += '<div><h3>Cute Puppy</h3><img src="' + puppySrc + '" alt="Cute Puppy" style="width: 100px; height: 100px; border-radius: 10px;"><button onclick="usePuppy()">Use this item</button></div>';
+                let buttonHtml = '';
+                if (equippedPet === 'puppy') {
+                    buttonHtml = '<button onclick="removePuppy()">Remove</button>';
+                } else {
+                    buttonHtml = '<button onclick="usePuppy()">Use this item</button>';
+                }
+                list.innerHTML += '<div><h3>Cute Puppy</h3><img src="' + puppySrc + '" alt="Cute Puppy" style="width: 100px; height: 100px; border-radius: 10px;">' + buttonHtml + '</div>';
             }
             if (inventory.length === 0) {
                 list.innerHTML += '<p>You don\'t have any stuff yet! Go shopping! 🛍️</p>';
@@ -890,11 +902,25 @@
             equippedPet = 'kitten';
             localStorage.setItem('equippedPet', equippedPet);
             alert("Fluffy Kitten is now with you! 😻");
+            openMyStuff(); // Refresh the list to show the remove button
         }
         function usePuppy() {
             equippedPet = 'puppy';
             localStorage.setItem('equippedPet', equippedPet);
             alert("Cute Puppy is now with you! 🐶");
+            openMyStuff(); // Refresh the list to show the remove button
+        }
+        function removeKitten() {
+            equippedPet = null;
+            localStorage.removeItem('equippedPet');
+            alert("Fluffy Kitten has been removed! 🐱");
+            openMyStuff(); // Refresh the list to show the use button
+        }
+        function removePuppy() {
+            equippedPet = null;
+            localStorage.removeItem('equippedPet');
+            alert("Cute Puppy has been removed! 🐕");
+            openMyStuff(); // Refresh the list to show the use button
         }
         function closeMyStuff() {
             document.getElementById('my-stuff').style.display = 'none';
