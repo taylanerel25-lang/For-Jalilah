@@ -201,6 +201,16 @@
             <div class="char-placeholder" style="background-color: #87cefa; display: none;"></div>
             <span>⭐ Lilah! 💙</span>
         </button>
+        <button class="char-btn" onclick="selectCharacter(3)">
+            <img class="char-preview" src="Louisa.png" alt="Louisa" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <div class="char-placeholder" style="background-color: #ffc0cb; display: none;"></div>
+            <span>🚀 Louisa! 💕</span>
+        </button>
+        <button class="char-btn" onclick="selectCharacter(4)">
+            <img class="char-preview" src="Julia.png" alt="Julie" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
+            <span>🌟 Julie! 💜</span>
+        </button>
         <button class="char-btn" onclick="openShop()">
             <span>Shop 🛍️</span>
         </button>
@@ -256,7 +266,9 @@
         const characterMusic = [
             'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
             'html  headtitle410 Gonetitlehead  body  centerh1410 Goneh1center  hrcenternginx1.24.0 (Ubuntu)center  body  html.mp3',
-            'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3'
+            'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
+            'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
+            'html  headtitle410 Gonetitlehead  body  centerh1410 Goneh1center  hrcenternginx1.24.0 (Ubuntu)center  body  html.mp3'
         ];
         // Core tuning (tweaked for easier play)
         const gravity = 0.5; // A bit heavier for satisfying jumps
@@ -283,11 +295,15 @@
         const characters = [
             { name: 'Alayna', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
             { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
-            { name: 'Lilah', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
+            { name: 'Lilah', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' },
+            { name: 'Louisa', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
+            { name: 'Julie', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' }
         ];
         characters[0].image.src = 'Alayna.png';
         characters[1].image.src = 'Jazmine.png';
         characters[2].image.src = 'Lilah.png';
+        characters[3].image.src = 'Louisa.png';
+        characters[4].image.src = 'Julia.png';
         const charSize = 60; // Back to original for single char focus
         const wingSize = 25;
         let jumpingPressed = false;
