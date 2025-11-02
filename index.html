@@ -169,6 +169,7 @@
         let selectedIndex = -1;
         let animationId = null;
         let musicUnlockHandler = null;
+        let obstacleColor = '#000000'; // Default, set per character
         const characters = [
             { name: 'Alayna', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
             { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
@@ -184,8 +185,7 @@
         let obstacles = [];
         let obstacleSpawnTimer = 0;
         const obstacleInterval = 150; // More frequent for excitement
-        const obstacleWidth = 50;
-        const obstacleHeight = 50;
+        const obstacleSize = 75; // Big hearts!
         function processImage(img, index, callback) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -354,17 +354,31 @@
                 ctx.fill();
             }
         }
+        function drawHeart(x, y, size, color) {
+            ctx.save();
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(x, y + size / 4);
+            ctx.quadraticCurveTo(x + size / 2, y - size / 4, x + size / 2, y + size / 4);
+            ctx.quadraticCurveTo(x + size / 2, y + size / 2, x, y + size * 3 / 4);
+            ctx.quadraticCurveTo(x - size / 2, y + size / 2, x - size / 2, y + size / 4);
+            ctx.quadraticCurveTo(x - size / 2, y - size / 4, x, y + size / 4);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        }
         function updateObstacles() {
             obstacleSpawnTimer++;
             if (obstacleSpawnTimer > obstacleInterval) {
                 const minY = 150;
-                const maxY = canvas.height - waterHeight - obstacleHeight - 50;
+                const maxY = canvas.height - waterHeight - obstacleSize - 50;
                 const obsY = minY + Math.random() * (maxY - minY);
                 obstacles.push({
-                    x: canvas.width + obstacleWidth,
+                    x: canvas.width + obstacleSize,
                     y: obsY,
-                    width: obstacleWidth,
-                    height: obstacleHeight
+                    width: obstacleSize,
+                    height: obstacleSize
                 });
                 obstacleSpawnTimer = 0;
             }
@@ -376,9 +390,8 @@
             }
         }
         function drawObstacles() {
-            ctx.fillStyle = '#FF4500';
             for (const obs of obstacles) {
-                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                drawHeart(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width, obstacleColor);
             }
         }
         function checkObstacleCollision() {
@@ -494,6 +507,7 @@
             char.vy = 0;
         }
         function initGame() {
+            obstacleColor = characters[selectedIndex].placeholder;
             resetCharacters();
             gameOver = false;
             score = 0;
