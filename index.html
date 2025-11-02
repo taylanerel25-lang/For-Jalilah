@@ -245,10 +245,10 @@
                 bgG = data[1];
                 bgB = data[2];
             }
-            // Remove background
+            // Remove background with adjusted threshold
             for (let i = 0; i < data.length; i += 4) {
                 if (autoRemoveBg) {
-                    if (Math.abs(data[i] - bgR) < 30 && Math.abs(data[i + 1] - bgG) < 30 && Math.abs(data[i + 2] - bgB) < 30) {
+                    if (Math.abs(data[i] - bgR) < 40 && Math.abs(data[i + 1] - bgG) < 40 && Math.abs(data[i + 2] - bgB) < 40) {
                         data[i + 3] = 0; // Make transparent
                     }
                 } else {
