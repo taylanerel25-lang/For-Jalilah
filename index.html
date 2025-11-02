@@ -135,7 +135,7 @@
         <button id="restart-btn" onclick="restartGame()">Play Again! 🚀</button>
     </div>
     <!-- Audio elements - Add your fun files here! -->
-    <audio id="bgMusic" loop></audio>
+    <audio id="bgMusic" loop preload="auto"></audio>
     <audio id="flapSound">
         <source src="flap-sound.mp3" type="audio/mpeg"> <!-- Wing flap whoosh! -->
     </audio>
@@ -168,6 +168,7 @@
         let gameOver = false;
         let selectedIndex = -1;
         let animationId = null;
+        let musicUnlockHandler = null;
         const characters = [
             { name: 'Alayna', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
             { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
@@ -241,6 +242,21 @@
             };
         }
 
+        function detachMusicUnlock() {
+            if (!musicUnlockHandler) return;
+            window.removeEventListener('pointerdown', musicUnlockHandler);
+            window.removeEventListener('touchstart', musicUnlockHandler);
+            musicUnlockHandler = null;
+        }
+        function attachMusicUnlock() {
+            if (musicUnlockHandler) return;
+            musicUnlockHandler = () => {
+                bgMusic.play().catch(() => {});
+                detachMusicUnlock();
+            };
+            window.addEventListener('pointerdown', musicUnlockHandler);
+            window.addEventListener('touchstart', musicUnlockHandler);
+        }
         function setCharacterMusic(index) {
             const musicSrc = characterMusic[index];
             if (!musicSrc) return;
@@ -252,9 +268,25 @@
             }
             bgMusic.currentTime = 0;
         }
+        function tryStartMusic() {
+            if (!bgMusic.src) return;
+            const playPromise = bgMusic.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+                playPromise
+                    .then(() => {
+                        detachMusicUnlock();
+                    })
+                    .catch(() => {
+                        attachMusicUnlock();
+                    });
+            } else {
+                detachMusicUnlock();
+            }
+        }
         function selectCharacter(index) {
             selectedIndex = index;
             setCharacterMusic(index);
+            tryStartMusic();
             document.getElementById('char-select').style.display = 'none';
             initGame();
         }
@@ -263,27 +295,23 @@
             document.getElementById('game-over').style.display = 'none';
             bgMusic.pause();
             bgMusic.currentTime = 0;
+            detachMusicUnlock();
             if (animationId) {
                 cancelAnimationFrame(animationId);
                 animationId = null;
             }
         }
-        window.addEventListener('mousedown', () => (jumpingPressed = true));
+        window.addEventListener('mousedown', () => {
+            jumpingPressed = true;
+            tryStartMusic();
+        });
         window.addEventListener('mouseup', () => (jumpingPressed = false));
         window.addEventListener('touchstart', (event) => {
             event.preventDefault();
             jumpingPressed = true;
+            tryStartMusic();
         });
         window.addEventListener('touchend', () => (jumpingPressed = false));
-        const resumeAudio = () => {
-            if (bgMusic.src) {
-                bgMusic.play().catch(() => {});
-            }
-            window.removeEventListener('mousedown', resumeAudio);
-            window.removeEventListener('touchstart', resumeAudio);
-        };
-        window.addEventListener('mousedown', resumeAudio, { once: true });
-        window.addEventListener('touchstart', resumeAudio, { once: true });
         function drawWings(x, y, flapAngle) {
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 4;
@@ -428,6 +456,7 @@
             document.getElementById('final-score').textContent = Math.floor(score / 60);
             document.getElementById('game-over').style.display = 'block';
             bgMusic.pause();
+            detachMusicUnlock();
         }
         function gameLoop() {
             if (gameOver || selectedIndex === -1) return;
@@ -476,7 +505,7 @@
             jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
             bgMusic.currentTime = 0;
-            bgMusic.play().catch(() => {});
+            tryStartMusic();
             drawScore();
             if (animationId) {
                 cancelAnimationFrame(animationId);
