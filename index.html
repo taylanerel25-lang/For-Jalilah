@@ -194,26 +194,33 @@
         }
         @media (max-width: 400px) {
             #char-select h2, #shop h2, #my-stuff h2, #my-house h2 {
-                font-size: 24px;
+                font-size: 20px;
             }
             .char-btn {
-                font-size: 16px;
-                padding: 10px;
-                gap: 10px;
+                font-size: 14px;
+                padding: 8px;
+                gap: 8px;
             }
             .char-preview, .char-placeholder {
-                width: 60px;
-                height: 60px;
+                width: 50px;
+                height: 50px;
             }
             #shop h3, #my-stuff h3 {
-                font-size: 22px;
+                font-size: 18px;
             }
             #shop button, #my-stuff button, #my-house button {
-                font-size: 16px;
-                padding: 8px 16px;
+                font-size: 14px;
+                padding: 6px 12px;
             }
             #dedication {
-                font-size: 18px;
+                font-size: 16px;
+            }
+            #score, #coins, #jewellery {
+                font-size: 20px;
+            }
+            #coin-display-img, #jewellery-display-img {
+                width: 30px;
+                height: 30px;
             }
         }
         @media (orientation: landscape) {
@@ -304,8 +311,8 @@
     </div>
     <div id="my-house">
         <h2>My House! 🏠</h2>
-        <p>Welcome to your empty house! Collect items to decorate it.</p>
-        <button class="close-btn" onclick="closeMyHouse()">Close</button>
+        <img src="ChatGPT Image Nov 2, 2025, 03_42_35 PM.png" alt="Empty House" style="width: 100%; height: auto;">
+        <button class="close-btn" onclick="closeMyHouse()">Back To Home Page</button>
     </div>
     <div id="game-over">
         Oh no! Splash! 💦<br>
