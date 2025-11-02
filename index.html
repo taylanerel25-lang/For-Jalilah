@@ -114,17 +114,17 @@
     <div id="char-select">
         <h2>🌈 Choose Your Superstar! ✨</h2>
         <button class="char-btn" onclick="selectCharacter(0)">
-            <img class="char-preview" src="Jazmine.png" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <img class="char-preview" src="Alayna.png" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #ffc0cb; display: none;"></div>
             <span>🚀 Alayna! 💕</span>
         </button>
         <button class="char-btn" onclick="selectCharacter(1)">
-            <img class="char-preview" src="Jazmine.jpg" alt="Jazmine" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <img class="char-preview" src="Jazmine.png" alt="Jazmine" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
             <span>🌟 Jazmine! 💜</span>
         </button>
         <button class="char-btn" onclick="selectCharacter(2)">
-            <img class="char-preview" src="Lilah.jpg" alt="Lilah" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <img class="char-preview" src="Lilah.png" alt="Lilah" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #87cefa; display: none;"></div>
             <span>⭐ Lilah! 💙</span>
         </button>
@@ -170,9 +170,9 @@
             { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
             { name: 'Lilah', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
         ];
-        characters[0].image.src = 'Jazmine.png';
-        characters[1].image.src = 'Jazmine.jpg';
-        characters[2].image.src = 'Lilah.jpg';
+        characters[0].image.src = 'Alayna.png';
+        characters[1].image.src = 'Jazmine.png';
+        characters[2].image.src = 'Lilah.png';
         const charSize = 60; // Back to original for single char focus
         const wingSize = 25;
         let jumpingPressed = false;
@@ -474,14 +474,10 @@
         });
         characters.forEach((char, index) => {
             char.image.addEventListener('load', () => {
-                if (index === 0) { // Process only Alayna's new image
-                    processImage(char.image, index, (processedImg) => {
-                        char.image = processedImg;
-                        char.ready = true;
-                    });
-                } else {
+                processImage(char.image, index, (processedImg) => {
+                    char.image = processedImg;
                     char.ready = true;
-                }
+                });
             });
             char.image.addEventListener('error', () => {
                 console.warn(`Error loading ${char.name}'s image - check file path!`);
