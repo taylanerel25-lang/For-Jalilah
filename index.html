@@ -32,8 +32,6 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: none;
-            max-height: 80vh;
-            overflow-y: auto;
         }
         #char-select {
             flex-direction: column;
@@ -108,39 +106,6 @@
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
             user-select: none;
         }
-        /* Mobile adjustments */
-        @media (max-width: 768px) {
-            #char-select, #game-over {
-                top: 60%;
-                padding: 20px;
-            }
-            #char-select h2 {
-                font-size: 24px;
-            }
-            .char-btn {
-                font-size: 18px;
-                padding: 10px;
-                gap: 10px;
-            }
-            .char-preview, .char-placeholder {
-                width: 60px;
-                height: 60px;
-            }
-            #game-over {
-                font-size: 36px;
-            }
-            #restart-btn {
-                font-size: 20px;
-                padding: 8px 16px;
-            }
-            #score {
-                font-size: 24px;
-                top: 10px;
-            }
-            canvas {
-                height: calc(100vh - 60px); /* Nudge down for phone notches */
-            }
-        }
     </style>
 </head>
 <body>
@@ -170,7 +135,9 @@
         <button id="restart-btn" onclick="restartGame()">Play Again! 🚀</button>
     </div>
     <!-- Audio elements - Add your fun files here! -->
-    <audio id="bgMusic" loop></audio>
+    <audio id="bgMusic" loop>
+        <source id="bgSource" src="" type="audio/mpeg"> <!-- Dynamic src set in JS -->
+    </audio>
     <audio id="flapSound">
         <source src="flap-sound.mp3" type="audio/mpeg"> <!-- Wing flap whoosh! -->
     </audio>
@@ -181,6 +148,7 @@
         canvas.height = window.innerHeight;
         // Audio hooks
         const bgMusic = document.getElementById('bgMusic');
+        const bgSource = document.getElementById('bgSource');
         const flapSound = document.getElementById('flapSound');
         const musicFiles = ['Alayna and Lilah.mp3', 'Jazmine.mp3', 'Alayna and Lilah.mp3'];
         // Core tuning (tweaked for dreamy drift)
@@ -442,15 +410,7 @@
             }
             document.getElementById('final-score').textContent = Math.floor(score / 60);
             document.getElementById('game-over').style.display = 'block';
-            // Gentle fade out
-            const fadeInterval = setInterval(() => {
-                bgMusic.volume -= 0.1;
-                if (bgMusic.volume <= 0) {
-                    bgMusic.pause();
-                    bgMusic.volume = 1;
-                    clearInterval(fadeInterval);
-                }
-            }, 200);
+            bgMusic.pause();
         }
         function gameLoop() {
             if (gameOver || selectedIndex === -1) return;
@@ -498,18 +458,11 @@
             jumpingPressed = false;
             jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
-            // Set and reset music with canplay wait
-            bgMusic.src = musicFiles[selectedIndex];
+            // Set and reset music
+            bgSource.src = musicFiles[selectedIndex];
             bgMusic.load();
             bgMusic.currentTime = 0;
-            bgMusic.volume = 1;
-            const playHandler = () => {
-                bgMusic.play().catch(err => {
-                    console.error('Music play error:', err.message); // Log for debugging
-                });
-                bgMusic.removeEventListener('canplay', playHandler);
-            };
-            bgMusic.addEventListener('canplay', playHandler);
+            bgMusic.play().catch(() => {});
             drawScore();
             if (animationId) {
                 cancelAnimationFrame(animationId);
