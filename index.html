@@ -21,7 +21,7 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        #game-over, #char-select, #shop, #my-stuff {
+        #game-over, #char-select, #shop, #my-stuff, #my-house {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -115,8 +115,10 @@
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
             user-select: none;
+            display: flex;
+            align-items: center;
         }
-        #jewelry {
+        #jewellery {
             position: absolute;
             top: 60px;
             right: 20px;
@@ -125,15 +127,17 @@
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
             user-select: none;
+            display: flex;
+            align-items: center;
         }
-        #shop, #my-stuff {
+        #shop, #my-stuff, #my-house {
             flex-direction: column;
             gap: 15px;
             max-width: 300px;
             background: linear-gradient(135deg, #FF69B4, #87CEFA, #FFD700);
             border: 4px solid #FF69B4;
         }
-        #shop h2, #my-stuff h2 {
+        #shop h2, #my-stuff h2, #my-house h2 {
             font-size: 32px;
             color: #FF1493;
             text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
@@ -143,7 +147,7 @@
             margin: 5px 0;
             color: #4B0082;
         }
-        #shop button, #my-stuff button {
+        #shop button, #my-stuff button, #my-house button {
             background: #FFD700;
             border: none;
             border-radius: 10px;
@@ -152,10 +156,10 @@
             font-weight: bold;
             cursor: pointer;
         }
-        #shop button:hover, #my-stuff button:hover {
+        #shop button:hover, #my-stuff button:hover, #my-house button:hover {
             background: #FFA500;
         }
-        #shop .close-btn, #my-stuff .close-btn {
+        #shop .close-btn, #my-stuff .close-btn, #my-house .close-btn {
             background: #FF69B4; /* Pink color for close button */
         }
         #back-home {
@@ -177,14 +181,24 @@
         #back-home:hover {
             transform: translateX(-50%) scale(1.05);
         }
+        #dedication {
+            font-size: 24px;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+        }
+        #dedication emoji {
+            font-size: 2em;
+        }
     </style>
 </head>
 <body>
 <div id="score">Score: 0</div>
-<div id="coins">Coins: 0</div>
-<div id="jewelry">Jewelry: 0</div>
+<div id="coins"><img id="coin-display-img" src="" style="width: 40px; height: 40px; margin-right: 10px;"><span id="coin-count">0</span></div>
+<div id="jewellery"><img id="jewellery-display-img" src="" style="width: 40px; height: 40px; margin-right: 10px;"><span id="jewellery-count">0</span></div>
     <canvas id="gameCanvas"></canvas>
     <div id="char-select">
+        <div id="dedication">A game for you! made by your uncle Tay Tay <span style="font-size: 2em;">👮‍♂️</span></div>
         <h2>🌈 Choose Your Superstar! ✨</h2>
         <button class="char-btn" onclick="selectCharacter(0)">
             <img class="char-preview" src="Alayna.png" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
@@ -209,13 +223,16 @@
         <button class="char-btn" onclick="selectCharacter(4)">
             <img class="char-preview" src="Julia.png" alt="Julie" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
-            <span>🌟 Julie! 💜</span>
+            <span>🌟 Julia! 💜</span>
         </button>
         <button class="char-btn" onclick="openShop()">
             <span>Shop 🛍️</span>
         </button>
         <button class="char-btn" onclick="openMyStuff()">
             <span>My Stuff 🎒</span>
+        </button>
+        <button class="char-btn" onclick="openMyHouse()">
+            <span>My House 🏠</span>
         </button>
     </div>
     <div id="shop">
@@ -245,6 +262,11 @@
         <h2>My Stuff! 🎒</h2>
         <div id="inventory-list"></div>
         <button class="close-btn" onclick="closeMyStuff()">Close</button>
+    </div>
+    <div id="my-house">
+        <h2>My House! 🏠</h2>
+        <p>Welcome to your empty house! Collect items to decorate it.</p>
+        <button class="close-btn" onclick="closeMyHouse()">Close</button>
     </div>
     <div id="game-over">
         Oh no! Splash! 💦<br>
@@ -290,7 +312,7 @@
         let beatPhase = 0;
         let score = 0;
         let coins = localStorage.getItem('coins') ? parseInt(localStorage.getItem('coins')) : 0;
-        let jewelry = localStorage.getItem('jewelry') ? parseInt(localStorage.getItem('jewelry')) : 0;
+        let jewellery = localStorage.getItem('jewellery') ? parseInt(localStorage.getItem('jewellery')) : 0;
         let inventory = localStorage.getItem('inventory') ? JSON.parse(localStorage.getItem('inventory')) : [];
         let equippedPet = localStorage.getItem('equippedPet') || null;
         let equippedAccessory = localStorage.getItem('equippedAccessory') || null;
@@ -317,21 +339,22 @@
         let jumpingPressedPrev = false;
         let obstacles = [];
         let coinsList = [];
-        let jewelryList = [];
+        let jewelleryList = [];
         let obstacleSpawnTimer = 0;
         let coinSpawnTimer = 0;
-        let jewelrySpawnTimer = 0;
+        let jewellerySpawnTimer = 0;
         const obstacleInterval = 150; // More frequent for excitement
         const coinInterval = 200; // Coins a bit less frequent
-        const jewelryInterval = coinInterval * 5; // Rare: ~1 every 5 coins
+        const jewelleryInterval = coinInterval * 5; // Rare: ~1 every 5 coins
         const obstacleSize = 75; // Big hearts!
         const coinSize = 40; // Golden coins
-        const jewelrySize = 40; // Jewelry size
+        const jewellerySize = 40; // Jewellery size
         const petSize = 50; // Size for equipped pet
         const crownSize = 30; // Small size for crown to fit on head
-        let jewelryImage = new Image();
-        jewelryImage.src = 'ChatGPT Image Nov 2, 2025, 01_11_08 PM.png';
-        let jewelryReady = false;
+        let jewelleryImage = new Image();
+        jewelleryImage.src = 'ChatGPT Image Nov 2, 2025, 01_11_08 PM.png';
+        let jewelleryReady = false;
+        let jewellerySrc = '';
         let coinImage = new Image();
         coinImage.src = 'ChatGPT Image Nov 2, 2025, 01_25_25 PM.png';
         let coinReady = false;
@@ -557,9 +580,9 @@
                 ctx.fill();
             }
         }
-        function drawJewelry(x, y, size) {
-            if (jewelryReady) {
-                ctx.drawImage(jewelryImage, x, y, size, size);
+        function drawJewellery(x, y, size) {
+            if (jewelleryReady) {
+                ctx.drawImage(jewelleryImage, x, y, size, size);
             } else {
                 // Fallback placeholder
                 ctx.fillStyle = '#FFD700';
@@ -610,24 +633,24 @@
                 }
             }
         }
-        function updateJewelry() {
-            jewelrySpawnTimer++;
-            if (jewelrySpawnTimer > jewelryInterval) {
+        function updateJewellery() {
+            jewellerySpawnTimer++;
+            if (jewellerySpawnTimer > jewelleryInterval) {
                 const minY = 150;
-                const maxY = canvas.height - waterHeight - jewelrySize - 50;
-                const jewelryY = minY + Math.random() * (maxY - minY);
-                jewelryList.push({
-                    x: canvas.width + jewelrySize,
-                    y: jewelryY,
-                    width: jewelrySize,
-                    height: jewelrySize
+                const maxY = canvas.height - waterHeight - jewellerySize - 50;
+                const jewelleryY = minY + Math.random() * (maxY - minY);
+                jewelleryList.push({
+                    x: canvas.width + jewellerySize,
+                    y: jewelleryY,
+                    width: jewellerySize,
+                    height: jewellerySize
                 });
-                jewelrySpawnTimer = 0;
+                jewellerySpawnTimer = 0;
             }
-            for (let i = jewelryList.length - 1; i >= 0; i--) {
-                jewelryList[i].x -= gameSpeed;
-                if (jewelryList[i].x + jewelryList[i].width < 0) {
-                    jewelryList.splice(i, 1);
+            for (let i = jewelleryList.length - 1; i >= 0; i--) {
+                jewelleryList[i].x -= gameSpeed;
+                if (jewelleryList[i].x + jewelleryList[i].width < 0) {
+                    jewelleryList.splice(i, 1);
                 }
             }
         }
@@ -641,9 +664,9 @@
                 drawCoinItem(coin.x, coin.y, coin.width);
             }
         }
-        function drawJewelryItems() {
-            for (const jewel of jewelryList) {
-                drawJewelry(jewel.x, jewel.y, jewel.width);
+        function drawJewelleryItems() {
+            for (const jewel of jewelleryList) {
+                drawJewellery(jewel.x, jewel.y, jewel.width);
             }
         }
         function checkObstacleCollision() {
@@ -672,7 +695,7 @@
                 ) {
                     coins++;
                     localStorage.setItem('coins', coins);
-                    document.getElementById('coins').textContent = `Coins: ${coins}`;
+                    document.getElementById('coin-count').textContent = coins;
                     coinSound.play().catch(() => {});
                     if (navigator.vibrate) {
                         navigator.vibrate(200);
@@ -681,9 +704,9 @@
                 }
             }
         }
-        function checkJewelryCollection() {
-            for (let i = jewelryList.length - 1; i >= 0; i--) {
-                const jewel = jewelryList[i];
+        function checkJewelleryCollection() {
+            for (let i = jewelleryList.length - 1; i >= 0; i--) {
+                const jewel = jewelleryList[i];
                 const char = characters[selectedIndex];
                 if (
                     char.x + charSize / 2 > jewel.x &&
@@ -691,14 +714,14 @@
                     char.y + charSize / 2 > jewel.y &&
                     char.y - charSize / 2 < jewel.y + jewel.height
                 ) {
-                    jewelry++;
-                    localStorage.setItem('jewelry', jewelry);
-                    document.getElementById('jewelry').textContent = `Jewelry: ${jewelry}`;
-                    coinSound.play().catch(() => {}); // Reuse coin sound for jewelry
+                    jewellery++;
+                    localStorage.setItem('jewellery', jewellery);
+                    document.getElementById('jewellery-count').textContent = jewellery;
+                    coinSound.play().catch(() => {}); // Reuse coin sound for jewellery
                     if (navigator.vibrate) {
                         navigator.vibrate(200);
                     }
-                    jewelryList.splice(i, 1);
+                    jewelleryList.splice(i, 1);
                 }
             }
         }
@@ -790,13 +813,13 @@
             drawRainbowWater();
             updateObstacles();
             updateCoins();
-            updateJewelry();
+            updateJewellery();
             drawObstacles();
             drawCoins();
-            drawJewelryItems();
+            drawJewelleryItems();
             checkObstacleCollision();
             checkCoinCollection();
-            checkJewelryCollection();
+            checkJewelleryCollection();
             updateCharacters();
             drawCharacters();
             drawScore();
@@ -815,15 +838,15 @@
             resetCharacters();
             gameOver = false;
             score = 0;
-            // Don't reset coins and jewelry, as they are persistent
-            document.getElementById('coins').textContent = `Coins: ${coins}`;
-            document.getElementById('jewelry').textContent = `Jewelry: ${jewelry}`;
+            // Don't reset coins and jewellery, as they are persistent
+            document.getElementById('coin-count').textContent = coins;
+            document.getElementById('jewellery-count').textContent = jewellery;
             obstacleSpawnTimer = 0;
             coinSpawnTimer = 0;
-            jewelrySpawnTimer = 0;
+            jewellerySpawnTimer = 0;
             obstacles = [];
             coinsList = [];
-            jewelryList = [];
+            jewelleryList = [];
             jumpingPressed = false;
             jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
@@ -983,6 +1006,22 @@
             document.getElementById('my-stuff').style.display = 'none';
             document.getElementById('char-select').style.display = 'flex';
         }
+        function openMyHouse() {
+            document.getElementById('char-select').style.display = 'none';
+            document.getElementById('my-house').style.display = 'flex';
+        }
+        function closeMyHouse() {
+            document.getElementById('my-house').style.display = 'none';
+            document.getElementById('char-select').style.display = 'flex';
+        }
+        // Add event listeners to save data before unloading
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('coins', coins);
+            localStorage.setItem('jewellery', jewellery);
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            if (equippedPet) localStorage.setItem('equippedPet', equippedPet);
+            if (equippedAccessory) localStorage.setItem('equippedAccessory', equippedAccessory);
+        });
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -1003,18 +1042,20 @@
                 char.image.dispatchEvent(new Event('load'));
             }
         });
-        // Process the jewelry image with auto background removal
-        jewelryImage.addEventListener('load', () => {
-            processImage(jewelryImage, -1, (processedImg) => {
-                jewelryImage = processedImg;
-                jewelryReady = true;
+        // Process the jewellery image with auto background removal
+        jewelleryImage.addEventListener('load', () => {
+            processImage(jewelleryImage, -1, (processedImg) => {
+                jewellerySrc = processedImg.src;
+                jewelleryImage = processedImg;
+                jewelleryReady = true;
+                document.getElementById('jewellery-display-img').src = jewellerySrc;
             }, true);
         });
-        jewelryImage.addEventListener('error', () => {
-            console.warn('Error loading jewelry image - check file path!');
+        jewelleryImage.addEventListener('error', () => {
+            console.warn('Error loading jewellery image - check file path!');
         });
-        if (jewelryImage.complete && jewelryImage.naturalWidth) {
-            jewelryImage.dispatchEvent(new Event('load'));
+        if (jewelleryImage.complete && jewelleryImage.naturalWidth) {
+            jewelleryImage.dispatchEvent(new Event('load'));
         }
         // Process the coin image with auto background removal
         coinImage.addEventListener('load', () => {
@@ -1022,6 +1063,7 @@
                 coinSrc = processedImg.src;
                 coinImage = processedImg;
                 coinReady = true;
+                document.getElementById('coin-display-img').src = coinSrc;
                 if (document.getElementById('coin-icon')) {
                     document.getElementById('coin-icon').src = coinSrc;
                 }
@@ -1090,6 +1132,9 @@
         if (crownImage.complete && crownImage.naturalWidth) {
             crownImage.dispatchEvent(new Event('load'));
         }
+        // Initial display updates
+        document.getElementById('coin-count').textContent = coins;
+        document.getElementById('jewellery-count').textContent = jewellery;
         showCharSelect();
     </script>
 </body>
