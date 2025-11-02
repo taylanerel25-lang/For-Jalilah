@@ -136,7 +136,7 @@
     </div>
     <!-- Audio elements - Add your fun files here! -->
     <audio id="bgMusic" loop>
-        <source src="background-music.mp3" type="audio/mpeg"> <!-- Upbeat triplet tune? 🎶 -->
+        <source id="bgSource" src="" type="audio/mpeg"> <!-- Dynamic src set in JS -->
     </audio>
     <audio id="flapSound">
         <source src="flap-sound.mp3" type="audio/mpeg"> <!-- Wing flap whoosh! -->
@@ -148,11 +148,13 @@
         canvas.height = window.innerHeight;
         // Audio hooks
         const bgMusic = document.getElementById('bgMusic');
+        const bgSource = document.getElementById('bgSource');
         const flapSound = document.getElementById('flapSound');
-        // Core tuning (tweaked for jumpier Fun Run feel)
-        const gravity = 0.5; // A bit heavier for satisfying jumps
-        const jumpStrength = -12; // Bigger leap for dodging!
-        const gameSpeed = 3; // Faster scroll for racing vibe
+        const musicFiles = ['Alayna and Lilah.mp3', 'Jazmine.mp3', 'Alayna and Lilah.mp3'];
+        // Core tuning (tweaked for dreamy drift)
+        const gravity = 0.4; // Gentler pull for floaty fun
+        const jumpStrength = -10; // Softer leaps for easy dodging
+        const gameSpeed = 2; // Slower scroll for chill vibes
         const waterHeightRatio = 0.25;
         const waveAmplitude = 26;
         const waveFrequency = 0.015;
@@ -179,7 +181,7 @@
         let jumpingPressedPrev = false;
         let obstacles = [];
         let obstacleSpawnTimer = 0;
-        const obstacleInterval = 150; // More frequent for excitement
+        const obstacleInterval = 200; // Less frequent for relaxed play
         const obstacleWidth = 50;
         const obstacleHeight = 50;
 
@@ -456,6 +458,10 @@
             jumpingPressed = false;
             jumpingPressedPrev = false;
             document.getElementById('game-over').style.display = 'none';
+            // Set and reset music
+            bgSource.src = musicFiles[selectedIndex];
+            bgMusic.load();
+            bgMusic.currentTime = 0;
             bgMusic.play().catch(() => {});
             drawScore();
             if (animationId) {
