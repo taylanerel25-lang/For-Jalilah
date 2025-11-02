@@ -115,13 +115,13 @@
         <h2>🌈 Choose Your Superstar! ✨</h2>
         <button class="char-btn" onclick="selectCharacter(0)">
             <img class="char-preview" src="Alayna.png" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
-            <div class="char-placeholder" style="background-color: #ffc0cb; display: none;"></div>
-            <span>🚀 Alayna! 💕</span>
+            <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
+            <span>🚀 Alayna! 💜</span>
         </button>
         <button class="char-btn" onclick="selectCharacter(1)">
             <img class="char-preview" src="Jazmine.png" alt="Jazmine" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
-            <div class="char-placeholder" style="background-color: #dda0dd; display: none;"></div>
-            <span>🌟 Jazmine! 💜</span>
+            <div class="char-placeholder" style="background-color: #ffc0cb; display: none;"></div>
+            <span>🌟 Jazmine! 💕</span>
         </button>
         <button class="char-btn" onclick="selectCharacter(2)">
             <img class="char-preview" src="Lilah.png" alt="Lilah" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
@@ -170,8 +170,8 @@
         let animationId = null;
         let musicUnlockHandler = null;
         const characters = [
-            { name: 'Alayna', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
-            { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
+            { name: 'Alayna', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
+            { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#ffc0cb' },
             { name: 'Lilah', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
         ];
         characters[0].image.src = 'Alayna.png';
