@@ -150,6 +150,9 @@
     <audio id="flapSound">
         <source src="flap-sound.mp3" type="audio/mpeg"> <!-- Wing flap whoosh! -->
     </audio>
+    <audio id="coinSound" preload="auto">
+        <source src="retro-coin-3-236679.mp3" type="audio/mpeg">
+    </audio>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -158,6 +161,7 @@
         // Audio hooks
         const bgMusic = document.getElementById('bgMusic');
         const flapSound = document.getElementById('flapSound');
+        const coinSound = document.getElementById('coinSound');
         const characterMusic = [
             'HUNTRIX - What It Sounds Like (Lyrics) KPop Demon Hunters.mp3',
             'html  headtitle410 Gonetitlehead  body  centerh1410 Goneh1center  hrcenternginx1.24.0 (Ubuntu)center  body  html.mp3',
@@ -202,7 +206,11 @@
         const coinInterval = 200; // Coins a bit less frequent
         const obstacleSize = 75; // Big hearts!
         const coinSize = 40; // Golden coins
-        function processImage(img, index, callback) {
+        let necklaceImage = new Image();
+        necklaceImage.src = 'ChatGPT Image Nov 2, 2025, 01_11_08 PM.png';
+        let necklaceReady = false;
+        const necklaceSize = 30; // Size for the necklace overlay
+        function processImage(img, index, callback, autoRemoveBg = false) {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = img.width;
@@ -210,10 +218,22 @@
             tempCtx.drawImage(img, 0, 0);
             let imageData = tempCtx.getImageData(0, 0, img.width, img.height);
             let data = imageData.data;
-            // Remove near-black background (threshold for pure-ish black)
+            let bgR = 0, bgG = 0, bgB = 0;
+            if (autoRemoveBg) {
+                bgR = data[0];
+                bgG = data[1];
+                bgB = data[2];
+            }
+            // Remove background
             for (let i = 0; i < data.length; i += 4) {
-                if (data[i] < 5 && data[i + 1] < 5 && data[i + 2] < 5) {
-                    data[i + 3] = 0; // Make transparent
+                if (autoRemoveBg) {
+                    if (Math.abs(data[i] - bgR) < 30 && Math.abs(data[i + 1] - bgG) < 30 && Math.abs(data[i + 2] - bgB) < 30) {
+                        data[i + 3] = 0; // Make transparent
+                    }
+                } else {
+                    if (data[i] < 5 && data[i + 1] < 5 && data[i + 2] < 5) {
+                        data[i + 3] = 0; // Make transparent for black bg
+                    }
                 }
             }
             tempCtx.putImageData(imageData, 0, 0);
@@ -249,10 +269,12 @@
             newImg.src = newCanvas.toDataURL('image/png');
             newImg.onload = () => {
                 callback(newImg);
-                // Update the preview img src too
-                const previews = document.querySelectorAll('.char-btn img.char-preview');
-                if (previews[index]) {
-                    previews[index].src = newImg.src;
+                // Update the preview img src too if index valid
+                if (index >= 0) {
+                    const previews = document.querySelectorAll('.char-btn img.char-preview');
+                    if (previews[index]) {
+                        previews[index].src = newImg.src;
+                    }
                 }
             };
         }
@@ -475,6 +497,10 @@
                 ) {
                     coins++;
                     document.getElementById('coins').textContent = `Coins: ${coins}`;
+                    coinSound.play().catch(() => {});
+                    if (navigator.vibrate) {
+                        navigator.vibrate(200);
+                    }
                     coinsList.splice(i, 1);
                 }
             }
@@ -527,6 +553,10 @@
                 ctx.filter = 'none';
             }
             ctx.restore();
+            // Draw necklace overlay if ready
+            if (necklaceReady) {
+                ctx.drawImage(necklaceImage, char.x - necklaceSize / 2, char.y + 20, necklaceSize, necklaceSize);
+            }
         }
         function drawScore() {
             document.getElementById('score').textContent = `Score: ${Math.floor(score / 60)}`;
@@ -610,7 +640,7 @@
                 processImage(char.image, index, (processedImg) => {
                     char.image = processedImg;
                     char.ready = true;
-                });
+                }, false);
             });
             char.image.addEventListener('error', () => {
                 console.warn(`Error loading ${char.name}'s image - check file path!`);
@@ -619,6 +649,19 @@
                 char.image.dispatchEvent(new Event('load'));
             }
         });
+        // Process the necklace image with auto background removal
+        necklaceImage.addEventListener('load', () => {
+            processImage(necklaceImage, -1, (processedImg) => {
+                necklaceImage = processedImg;
+                necklaceReady = true;
+            }, true);
+        });
+        necklaceImage.addEventListener('error', () => {
+            console.warn('Error loading necklace image - check file path!');
+        });
+        if (necklaceImage.complete && necklaceImage.naturalWidth) {
+            necklaceImage.dispatchEvent(new Event('load'));
+        }
         showCharSelect();
     </script>
 </body>
