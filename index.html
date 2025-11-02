@@ -150,6 +150,9 @@
             <div class="char-placeholder" style="background-color: #87cefa; display: none;"></div>
             <span>⭐ Lilah! 💙</span>
         </button>
+        <button class="char-btn" onclick="openShop()">
+            <span>Shop 🛍️</span>
+        </button>
     </div>
     <div id="game-over">
         Oh no! Splash! 💦<br>
@@ -704,6 +707,9 @@
         }
         function restartGame() {
             showCharSelect();
+        }
+        function openShop() {
+            alert("Shop coming soon! 🛍️✨");
         }
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
