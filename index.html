@@ -114,7 +114,7 @@
     <div id="char-select">
         <h2>🌈 Choose Your Superstar! ✨</h2>
         <button class="char-btn" onclick="selectCharacter(0)">
-            <img class="char-preview" src="Alayna.jpg" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
+            <img class="char-preview" src="Jazmine.png" alt="Alayna" onerror="this.style.display='none'; this.nextSibling.style.display='block';">
             <div class="char-placeholder" style="background-color: #ffc0cb; display: none;"></div>
             <span>🚀 Alayna! 💕</span>
         </button>
@@ -170,7 +170,7 @@
             { name: 'Jazmine', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#dda0dd' },
             { name: 'Lilah', x: 0, y: 0, vy: 0, image: new Image(), ready: false, placeholder: '#87cefa' }
         ];
-        characters[0].image.src = 'Alayna.jpg';
+        characters[0].image.src = 'Jazmine.png';
         characters[1].image.src = 'Jazmine.jpg';
         characters[2].image.src = 'Lilah.jpg';
         const charSize = 60; // Back to original for single char focus
@@ -182,6 +182,62 @@
         const obstacleInterval = 150; // More frequent for excitement
         const obstacleWidth = 50;
         const obstacleHeight = 50;
+
+        function processImage(img, index, callback) {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            tempCtx.drawImage(img, 0, 0);
+            let imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+            let data = imageData.data;
+            // Remove near-black background (threshold for pure-ish black)
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i] < 5 && data[i + 1] < 5 && data[i + 2] < 5) {
+                    data[i + 3] = 0; // Make transparent
+                }
+            }
+            tempCtx.putImageData(imageData, 0, 0);
+            // Find bounding box of non-transparent pixels
+            let minX = img.width, minY = img.height, maxX = 0, maxY = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] > 0) {
+                    const x = (i / 4) % img.width;
+                    const y = Math.floor((i / 4) / img.width);
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+            if (minX > maxX || minY > maxY) {
+                // No non-transparent pixels? Fallback to original
+                return callback(img);
+            }
+            const cropWidth = maxX - minX + 1;
+            const cropHeight = maxY - minY + 1;
+            // Make square by padding with transparent space to preserve aspect ratio
+            const side = Math.max(cropWidth, cropHeight);
+            const newCanvas = document.createElement('canvas');
+            newCanvas.width = side;
+            newCanvas.height = side;
+            const newCtx = newCanvas.getContext('2d');
+            const offsetX = (side - cropWidth) / 2;
+            const offsetY = (side - cropHeight) / 2;
+            newCtx.drawImage(tempCanvas, minX, minY, cropWidth, cropHeight, offsetX, offsetY, cropWidth, cropHeight);
+            // Create new image from processed canvas
+            const newImg = new Image();
+            newImg.src = newCanvas.toDataURL('image/png');
+            newImg.onload = () => {
+                callback(newImg);
+                // Update the preview img src too
+                const previews = document.querySelectorAll('.char-btn img.char-preview');
+                if (previews[index]) {
+                    previews[index].src = newImg.src;
+                }
+            };
+        }
+
         function selectCharacter(index) {
             selectedIndex = index;
             document.getElementById('char-select').style.display = 'none';
@@ -418,14 +474,20 @@
         });
         characters.forEach((char, index) => {
             char.image.addEventListener('load', () => {
-                char.ready = true;
-                console.log(`${char.name}'s image loaded successfully!`);
+                if (index === 0) { // Process only Alayna's new image
+                    processImage(char.image, index, (processedImg) => {
+                        char.image = processedImg;
+                        char.ready = true;
+                    });
+                } else {
+                    char.ready = true;
+                }
             });
             char.image.addEventListener('error', () => {
                 console.warn(`Error loading ${char.name}'s image - check file path!`);
             });
             if (char.image.complete && char.image.naturalWidth) {
-                char.ready = true;
+                char.image.dispatchEvent(new Event('load'));
             }
         });
         showCharSelect();
