@@ -32,6 +32,26 @@
         }
     }
 
+    // Optional break reminder (grown-ups setting). Only ever shows between activities, never in the middle of a game.
+    const CALM_PLACES = ['town', 'select', 'house', 'dressup', 'shop', 'stickers'];
+    let playedMs = 0;
+    let lastTick = Date.now();
+    setInterval(() => {
+        const now = Date.now();
+        if (!document.hidden) playedMs += Math.min(now - lastTick, 60000);
+        lastTick = now;
+        const mins = RF.store.data ? RF.store.settings.breakMinutes : 0;
+        if (!mins || playedMs < mins * 60000) return;
+        if (CALM_PLACES.indexOf(RF.currentScene) < 0 || RF.ui.isModalOpen()) return;
+        playedMs = 0;
+        RF.ui.modal({
+            title: 'Great playing!', icon: '🧘',
+            body: 'Time for a stretch break! Everything is saved.',
+            say: 'Great playing! Time for a stretch break! Everything is saved.',
+            buttons: [{ label: 'OK!', icon: '👍', kind: 'green', size: 'xl' }]
+        });
+    }, 15000);
+
     window.addEventListener('error', (e) => console.error('Oops:', e.message));
     // Lets buttons show their pressed look straight away on iPhone/iPad
     document.addEventListener('touchstart', () => {}, { passive: true });

@@ -445,7 +445,8 @@
 
     RF.voice = {
         // Says something out loud (helps children who are still learning to read)
-        say(text, { interrupt = true, rate = 0.95, pitch = 1.15 } = {}) {
+        say(text, { interrupt = true, rate = null, pitch = 1.15 } = {}) {
+            if (rate === null) rate = settings().voiceRate || 0.95;
             if (!synth || !settings().voice || !text) return;
             try {
                 if (interrupt) synth.cancel();

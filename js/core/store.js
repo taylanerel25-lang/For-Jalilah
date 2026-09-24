@@ -41,6 +41,7 @@
         music: true, sfx: true, voice: true,
         musicVolume: 0.45, sfxVolume: 0.8,
         calm: reducedMotion,     // fewer sparkles and no shaking
+        voiceRate: 0.95,         // talking speed: 0.8 slow, 0.95 normal, 1.1 quick
         silentSwitch: false,     // true = stay quiet when the iPhone's silent switch is on
         breakMinutes: 0          // 0 = no break reminder
     };
