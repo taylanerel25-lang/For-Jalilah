@@ -16,9 +16,10 @@ Open `index.html` through any web server (or GitHub Pages) and it runs.
 | Drawing the pets | `js/pets.js` |
 | Each screen | `js/scenes/*.js`, `js/games/*.js`, with its own `css/<name>.css` |
 | Start-up | `js/main.js` |
-| Offline play | `sw.js`, `manifest.webmanifest` |
+| Offline play | `sw.js` (saves everything `index.html` links to - no list to maintain), `manifest.webmanifest` |
 
 Every script is a classic `<script defer>` (no modules, so it also runs when opened from a folder).
+A new screen needs three things: its `js/...` file, its `css/<name>.css`, and a line for each in `index.html`.
 Everything hangs off the global `RF` object.
 
 ## A screen ("scene")

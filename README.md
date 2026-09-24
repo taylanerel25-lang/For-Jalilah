@@ -1,27 +1,49 @@
-# Rainbow Flight 🌈✨
+# Superstar World 🌈✨
 
-A flying game for the triplet superstars, made by uncle Tay Tay.
+A game world for Alayna, Jazmine, Lilah, Louisa and Julia, made by Uncle Tay Tay 👮‍♂️.
 
-Pick your superstar, tap (or press space) to flap, and catch hearts ❤️, coins 🪙 and jewels 💎
-over the rainbow sea. Nobody can ever lose. Spend coins and jewels in the Shop, use your
-things in My Stuff, and visit your pets in My House.
+Tap your face, then walk around Rainbow Town and go into any building:
+
+| Place | What you do |
+| --- | --- |
+| 🏠 My House | Decorate your own room, and feed, bath, play with and name your pets |
+| 👗 Style Studio | Dress up (your real face on a cartoon body), choose colours, take photos, do a fashion show |
+| 🛍️ Shop | Spend coins and jewels on pets, clothes, house things and flying trails |
+| 🌈 Rainbow Flight | The original flying game, now with 7 worlds, power-ups, pets with powers and up to 3 players |
+| 🎈 Balloon Pop | Pop balloons, up to 3 players side by side |
+| 🏐 Keepy Uppy | Don't let the balloon touch the floor |
+| 🃏 Memory Match | Find the pairs (your faces and pets are on the cards), take turns with sisters |
+| 💃 Copy My Dance | Watch the dance, then copy it |
+| 🎹 Magic Piano | Play music, or learn songs by following the lights |
+| 🎨 Colouring | Tap to fill colouring pages |
+| 🧁 Cupcake Bakery | Make a cupcake and watch a customer gobble it up |
+| 🍡 Squish Corner | Squeeze a squishy |
+| 📒 Sticker Book | Stickers for everything you do; stars open new flying worlds |
+
+Every girl has her own coins, clothes, house, pets and stickers, and the same things to earn, so it's fair.
+Nobody can ever lose. The game talks, so you don't need to be able to read. There's a present in the mailbox
+every day, a Team Rainbow jar everyone fills together, and 12 secret kittens hidden around town and the house.
 
 ## Playing it
 
-Everything is in one file, `index.html`, plus the pictures and music next to it.
+- **Best:** open it on the iPad/iPhone from its web address, then **Share → Add to Home Screen**.
+  It then opens full screen like a real app and works without internet.
+  (Android: browser menu → **Install app** / **Add to Home screen**.)
+- To stop little ones leaving the game, turn on **Guided Access** (iPad/iPhone: Settings → Accessibility)
+  or **screen pinning** (Android).
+- **Grown-ups area:** on the "Who's playing?" screen, press and hold the ⚙️ for 2 seconds, then answer the sum.
+  Sound, music, voice speed, calm mode, break reminder, giving coins, resetting a girl, and a backup code
+  (to move everything to a new tablet) are in there.
 
-- **On a website (GitHub Pages)** – best on a phone or tablet. Add it to the home screen for
-  full screen.
-- **Straight from a folder** – double-click `index.html`. It works, the pictures just aren't
-  trimmed as neatly as on a website.
+Progress is saved on the device. No ads, no purchases, no chat, nothing is sent anywhere.
 
-Progress (coins, jewels, things bought) is saved in the browser on that device.
+**Privacy:** the pictures of the girls are part of the game files. If this repository or its GitHub Pages site is
+public, anyone with the link can see them, so keep the link in the family (the site asks search engines not to list it).
 
-## Changing things
+## For grown-ups who want to change things
 
-- **Music** – each superstar's song is set in the `characters` list near the top of the
-  script in `index.html`. Put the `.mp3` next to `index.html` and use its exact file name.
-  Simple names without spaces are safest.
-- **Shop items** – add a line to the `ITEMS` list. Give it a `picture` file, or just an
-  `emoji`. `slot` says where it goes when used: `pet`, `hat`, `wings` or `trail`.
-- **Speed and jumps** – the `Core tuning` constants near the top of the script.
+See [DEVELOPING.md](DEVELOPING.md). Most things (clothes, pets, house things, prices, missions) are one line each in
+`js/data/catalog.js`. The original full-size pictures are kept in `originals/`.
+
+Font: Fredoka (SIL Open Font License, `assets/fonts/OFL-LICENSE.txt`).
+Music: "What It Sounds Like" – HUNTR/X, KPop Demon Hunters (family use).
